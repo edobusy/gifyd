@@ -1,5 +1,5 @@
 # GIFYD
-Web application to create gifs from video files. Customisation options include gif duration, gif framerate, filters, and the possibility to write a caption. Written in TypeScript, HTML, and CSS. File format transformation and video editing was done using ffmpeg, specifically [ffmpeg.wasm](https://github.com/ffmpegwasm/ffmpeg.wasm).
+Web application to create gifs from video files. Customisation options include gif duration, gif framerate, filters, and the possibility to write a caption. Written in TypeScript, HTML, and CSS. File format transformation and video editing was done using ffmpeg, more specifically [ffmpeg.wasm](https://github.com/ffmpegwasm/ffmpeg.wasm).
 
 ## Live Demo
 [Click me!](https://gifyd.vercel.app/)
