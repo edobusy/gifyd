@@ -3,6 +3,7 @@ Web application to create gifs from video files. Customisation options include g
 
 ## Live Demo
 [Click me!](https://gifyd.vercel.app/)
+
 WARNING!!! The current version only works on Google Chrome (not Chrome Mobile!)
 
 ## Deploy locally
