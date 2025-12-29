@@ -1,0 +1,19 @@
+# Node dependencies
+node_modules
+
+# Build output from Vite
+dist
+
+# Git files
+.git
+.gitignore
+
+# Logs
+.log
+
+# IDE / OS files
+.vscode
+.DS_Store
+
+# Local environment files
+.env

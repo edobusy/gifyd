@@ -1,689 +1,634 @@
-/*@font-face {
-  font-family: 'timesnw';
-  src: local('timesnw') url('./assets/times.ttf') format('ttf');
-}
-
-@font-face {
-  font-family: 'comic';
-  src: local('comic') url('./assets/comic.ttf') format('ttf');
-}
-
-@font-face {
-  font-family: 'impact';
-  src: local('impact') url('./assets/impact.ttf') format('ttf');
-}
-*/
-
-/*
-  Colour Palette
-
-#A8EB12
-#EFDD32
-#FFD164
-#FFCC96
-
-*/
-/* Desktop - 1 */
-
-@import url('https://fonts.googleapis.com/css?family=Inder:400|Inria+Sans:700');
+@import url("https://fonts.googleapis.com/css?family=Inder:400|Inria+Sans:700");
 
 .normal-text {
-  color: var(--white);
-  font-family: var(--font-family-inder);
-  font-size: var(--font-size-s);
-  font-weight: 400;
-  font-style: normal;
+	color: var(--white);
+	font-family: var(--font-family-inder);
+	font-size: var(--font-size-s);
+	font-weight: 400;
+	font-style: normal;
 }
 
 .appNameLogo {
-  background: none;
-  border: none;
-  cursor: pointer;
-  position: absolute;
-  top: 2vh;
-  left: 2vw;
-  color: var(--electric-violet);
-  font-family: var(--font-family-inria_sans);
-  font-size: var(--font-size-m2);
-  font-weight: 700;
-  font-style: normal;
-  letter-spacing: 0;
-  line-height: normal;
-  min-height: 8rem;
-  text-shadow: 0.5rem 0.5rem 0px var(--glossy-grape);
-  z-index: 100;
-  margin-left: 2rem;
+	background: none;
+	border: none;
+	cursor: pointer;
+	position: absolute;
+	top: 2vh;
+	left: 2vw;
+	color: var(--electric-violet);
+	font-family: var(--font-family-inria_sans);
+	font-size: var(--font-size-m2);
+	font-weight: 700;
+	font-style: normal;
+	letter-spacing: 0;
+	line-height: normal;
+	min-height: 8rem;
+	text-shadow: 0.5rem 0.5rem 0px var(--glossy-grape);
+	z-index: 100;
+	margin-left: 2rem;
 }
 
 .App {
-  height: 100vh;
-  width: 100vw;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  overflow: hidden;
-  position: relative;
+	height: 100vh;
+	width: 100vw;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	overflow: hidden;
+	position: relative;
 }
 
 .bandContainer {
-  z-index: -100;
-  position: absolute;
-  top: 0px;
-  height: 120vh;
-  width: 550vw;
-  transform: translateX(-1%) rotate(-45deg);
+	z-index: -100;
+	position: absolute;
+	top: 0px;
+	height: 120vh;
+	width: 550vw;
+	transform: translateX(-1%) rotate(-45deg);
 }
 
 .band {
-  z-index: -100;
-  position: absolute;
-  top: 0px;
-  height: 120vh;
-  width: 550vw;
-  background: url('./assets/pattern.svg');
-  transform: translateX(-25%);
-  animation: slide 40s linear infinite;
+	z-index: -100;
+	position: absolute;
+	top: 0px;
+	height: 120vh;
+	width: 550vw;
+	background: url("./assets/pattern.svg");
+	transform: translateX(-25%);
+	animation: slide 40s linear infinite;
 }
 
 @keyframes slide {
-  to {
-    transform: translateX(25%);
-  }
+	to {
+		transform: translateX(25%);
+	}
 }
 
 .buttonContainer {
-  background-color: var(--main-button-colour);
-  border: 0.3rem solid;
-  border-color: var(--white);
-  border-radius: 10rem;
-  box-shadow: 1rem 1rem 0px var(--shadow-colour);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  height: 5rem;
-  min-width: 12rem;
-  transition-duration: 0.1s;
-  cursor: pointer;
+	background-color: var(--main-button-colour);
+	border: 0.3rem solid;
+	border-color: var(--white);
+	border-radius: 10rem;
+	box-shadow: 1rem 1rem 0px var(--shadow-colour);
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	height: 5rem;
+	min-width: 12rem;
+	transition-duration: 0.1s;
+	cursor: pointer;
 }
 
 .tilt {
-  transform: rotate(-9deg);
+	transform: rotate(-9deg);
 }
 
 .buttonText {
-  color: var(--white);
-  font-family: var(--font-family-inder);
-  font-size: var(--font-size-s);
-  font-weight: 400;
-  font-style: normal;
-  letter-spacing: 0;
-  line-height: normal;
-  text-align: center;
-  width: 12rem;
-  transition-duration: 0.2s;
+	color: var(--white);
+	font-family: var(--font-family-inder);
+	font-size: var(--font-size-s);
+	font-weight: 400;
+	font-style: normal;
+	letter-spacing: 0;
+	line-height: normal;
+	text-align: center;
+	width: 12rem;
+	transition-duration: 0.2s;
 }
 
 .buttonContainer:hover {
-  height: 5.5rem;
-  min-width: 12.5rem;
-  box-shadow: 2rem 2rem 0px var(--shadow-colour);
+	height: 5.5rem;
+	min-width: 12.5rem;
+	box-shadow: 2rem 2rem 0px var(--shadow-colour);
 }
 
 .buttonContainer:hover .buttonText {
-  margin-top: -0.2rem;
-  font-size: 2rem;
-  width: 12.5rem;
+	margin-top: -0.2rem;
+	font-size: 2rem;
+	width: 12.5rem;
 }
 
 .buttonContainer:active {
-  height: 5rem;
-  min-width: 12rem;
-  box-shadow: 0rem 0rem 0px var(--shadow-colour);
-  background-color: var(--electric-violet);
+	height: 5rem;
+	min-width: 12rem;
+	box-shadow: 0rem 0rem 0px var(--shadow-colour);
+	background-color: var(--electric-violet);
 }
 
 .buttonContainer:active .buttonText {
-  font-size: 1.9rem;
+	font-size: 1.9rem;
 }
 
 .buttonContainer:disabled {
-  background-color: var(--disabled-colour);
+	background-color: var(--disabled-colour);
 }
 
 .focusedButton {
-  background-color: var(--electric-violet);
+	background-color: var(--electric-violet);
 }
 
 .playButtonContainer {
-  position: relative;
+	position: relative;
 }
 
 .playButton {
-  position: absolute;
-  top: -3rem;
-  left: -6rem;
-  background-color: var(--electric-violet);
-  border: 0.3rem solid;
-  border-color: var(--white);
-  border-radius: 100%;
-  box-shadow: 1rem 1rem 0px var(--shadow-colour);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  height: 11rem;
-  width: 11rem;
-  transition-duration: 0.5s;
+	position: absolute;
+	top: -3rem;
+	left: -6rem;
+	background-color: var(--electric-violet);
+	border: 0.3rem solid;
+	border-color: var(--white);
+	border-radius: 100%;
+	box-shadow: 1rem 1rem 0px var(--shadow-colour);
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	height: 11rem;
+	width: 11rem;
+	transition-duration: 0.5s;
 
-  color: var(--white);
-  font-family: var(--font-family-inder);
-  font-size: 5rem;
-  font-weight: 700;
-  font-style: normal;
-  letter-spacing: 0;
-  line-height: 1rem;
-  text-align: center;
-  cursor: pointer;
+	color: var(--white);
+	font-family: var(--font-family-inder);
+	font-size: 5rem;
+	font-weight: 700;
+	font-style: normal;
+	letter-spacing: 0;
+	line-height: 1rem;
+	text-align: center;
+	cursor: pointer;
 }
 
 .playButton:hover .playSymbol {
-  font-size: 6rem;
-  margin-left: 1rem;
+	font-size: 6rem;
+	margin-left: 1rem;
 }
 
 .playButton:hover .pauseSymbol {
-  font-size: 6rem;
-  margin-bottom: 0.9rem;
+	font-size: 6rem;
+	margin-bottom: 0.9rem;
 }
 
 .playButton:active {
-  background-color: rgb(194, 2, 2);
+	background-color: rgb(194, 2, 2);
 }
 
 .playButton:disabled {
-  background-color: var(--disabled-colour);
+	background-color: var(--disabled-colour);
 }
 
 .playSymbol {
-  margin-left: 0.7rem;
+	margin-left: 0.7rem;
 }
 
 .pauseSymbol {
-  margin-bottom: 0.7rem;
+	margin-bottom: 0.7rem;
 }
 
 .hiddenVideoContainer {
-  overflow: hidden;
-  width: 1px;
-  display: flex;
-  justify-content: center;
-  align-items: center;
+	overflow: hidden;
+	width: 1px;
+	display: flex;
+	justify-content: center;
+	align-items: center;
 }
 
 .hiddenVideoContainer video {
-  position: absolute;
-  opacity: 0;
-  z-index: -10000;
-  /*right: -10000px;
+	position: absolute;
+	opacity: 0;
+	z-index: -10000;
+	/*right: -10000px;
   top: 10000px; */
 }
 
 .mainGrid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
+	display: grid;
+	grid-template-columns: 1fr 1fr;
 }
 
 @media screen and (max-width: 912px) {
-  .mainGrid {
-    bottom: 0;
-    left: 0;
-    overflow-y: auto;
-    overflow-x: hidden;
-    position: absolute;
-    right: 0;
-    top: -5vh;
-    display: block;
-  }
-  .rightSide {
-    margin: auto;
-    min-width: 100vw !important;
-    height: 0vh !important;
-    /* margin-top: 40rem; */
-  }
-  .leftSide {
-    margin: 17vh auto 10vh auto;
-    width: 100vw !important;
-  }
+	.mainGrid {
+		bottom: 0;
+		left: 0;
+		overflow-y: auto;
+		overflow-x: hidden;
+		position: absolute;
+		right: 0;
+		top: -5vh;
+		display: block;
+	}
+	.rightSide {
+		margin: auto;
+		min-width: 100vw !important;
+		height: 0vh !important;
+		/* margin-top: 40rem; */
+	}
+	.leftSide {
+		margin: 17vh auto 10vh auto;
+		width: 100vw !important;
+	}
 
-  .editOptions {
-    margin-top: 0 !important;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    width: 90%;
-    height: 25vh;
-    overflow-y: scroll;
-    overflow-x: hidden;
-    position: relative;
-  }
+	.editOptions {
+		margin-top: 0 !important;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		justify-content: center;
+		width: 90%;
+		height: 25vh;
+		overflow-y: scroll;
+		overflow-x: hidden;
+		position: relative;
+	}
 
-  .editSubOptionsContainer {
-    position: absolute;
-    width: 100%;
-    top: 2vh;
-  }
+	.editSubOptionsContainer {
+		position: absolute;
+		width: 100%;
+		top: 2vh;
+	}
 
-  .editSubOptions {
-    display: flex;
-    justify-content: space-around;
-    box-sizing: border-box;
-    height: fit-content;
-    width: 100%;
-    padding: 1.3rem 0;
-  }
+	.editSubOptions {
+		display: flex;
+		justify-content: space-around;
+		box-sizing: border-box;
+		height: fit-content;
+		width: 100%;
+		padding: 1.3rem 0;
+	}
 
-  .filterSettings {
-    margin-top: 0 !important;
-    display: flex;
-    flex-direction: column;
-    /* align-items: center; */
-    justify-content: center;
-    width: 90%;
-    height: 40vh;
-    overflow-y: scroll;
-    overflow-x: hidden;
-    position: relative;
-  }
+	.filterSettings {
+		margin-top: 0 !important;
+		display: flex;
+		flex-direction: column;
+		/* align-items: center; */
+		justify-content: center;
+		width: 90%;
+		height: 40vh;
+		overflow-y: scroll;
+		overflow-x: hidden;
+		position: relative;
+	}
 
-  .filterOptionsContainer {
-    position: absolute !important;
-    width: 100% !important;
-    top: 0 !important;
-  }
+	.filterOptionsContainer {
+		position: absolute !important;
+		width: 100% !important;
+		top: 0 !important;
+	}
 
-  .firstFilterOption {
-    margin-top: 10rem !important;
-    width: 100%;
-    margin-bottom: 2rem !important;
-  }
+	.firstFilterOption {
+		margin-top: 10rem !important;
+		width: 100%;
+		margin-bottom: 2rem !important;
+	}
 
-  .secondFilterOption {
-    margin-top: 10rem !important;
-    width: 100%;
-    margin-bottom: 2rem !important;
-  }
+	.secondFilterOption {
+		margin-top: 10rem !important;
+		width: 100%;
+		margin-bottom: 2rem !important;
+	}
 
-  .greenScreenOption {
-    margin-top: 50rem !important;
-    width: 100%;
-    margin-bottom: 3rem !important;
-  }
+	.greenScreenOption {
+		margin-top: 50rem !important;
+		width: 100%;
+		margin-bottom: 3rem !important;
+	}
 
-  /* Maybe I need to create custom filterSubOptions for each filter sub option */
+	.filterSubOptions {
+		display: flex !important;
+		justify-content: center;
+		align-items: center;
+		flex-direction: column;
+		margin-top: 5rem;
+	}
 
-  .filterSubOptions {
-    display: flex !important;
-    justify-content: center;
-    align-items: center;
-    flex-direction: column;
-    margin-top: 5rem;
-  }
+	.dualCol {
+		justify-content: space-between !important;
+		align-items: center;
+	}
 
-  .dualCol {
-    justify-content: space-between !important;
-    align-items: center;
-  }
+	.dualColGreenScreen {
+		display: flex;
+		flex-direction: column;
+		justify-content: space-around;
+		width: 90%;
+		margin: 1rem;
+	}
 
-  .dualColGreenScreen {
-    display: flex;
-    flex-direction: column;
-    justify-content: space-around;
-    width: 90%;
-    margin: 1rem;
-  }
-
-  .dualColMinMax {
-    justify-content: space-between !important;
-    align-items: center;
-  }
+	.dualColMinMax {
+		justify-content: space-between !important;
+		align-items: center;
+	}
 }
 
 @media (pointer: coarse) {
-  .buttonContainer:hover {
-    height: 5rem;
-    min-width: 12rem;
-    box-shadow: 1rem 1rem 0px var(--shadow-colour);
-  }
+	.buttonContainer:hover {
+		height: 5rem;
+		min-width: 12rem;
+		box-shadow: 1rem 1rem 0px var(--shadow-colour);
+	}
 
-  .buttonContainer:hover .buttonText {
-    margin-top: 0;
-    font-size: var(--font-size-s);
-    width: 12rem;
-  }
+	.buttonContainer:hover .buttonText {
+		margin-top: 0;
+		font-size: var(--font-size-s);
+		width: 12rem;
+	}
 }
 
 .leftSide {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  width: 50vw;
+	position: relative;
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
+	align-items: center;
+	width: 50vw;
 }
 
 .rightSide {
-  width: 50vw;
-  height: 50vh;
-  /* display: flex;
-  align-items: center;
-  flex-direction: column; */
+	width: 50vw;
+	height: 50vh;
 }
 
 .canvasVid {
-  border-radius: 0.5rem;
-  max-width: 100%;
-  background-color: var(--pig-pink);
+	border-radius: 0.5rem;
+	max-width: 100%;
+	background-color: var(--pig-pink);
 }
 
 .vidContainer {
-  background-color: var(--black);
-  border-radius: 1rem;
-  max-width: 90%;
-  overflow: hidden;
-  margin: auto;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  box-shadow: 1rem 1rem 0px var(--shadow-colour);
-  /* padding: 3rem 5rem;
-  
-  border: 0.3rem solid;
-  border-color: var(--white); */
-  /* border-radius: 100%; */
-  /* z-index: -1; */
+	background-color: var(--black);
+	border-radius: 1rem;
+	max-width: 90%;
+	overflow: hidden;
+	margin: auto;
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	box-shadow: 1rem 1rem 0px var(--shadow-colour);
 }
 
 .duoButtons {
-  position: relative;
-  top: 2rem;
+	position: relative;
+	top: 2rem;
 }
 
 .duoButtons :nth-child(1) {
-  position: absolute;
-  right: 8rem;
+	position: absolute;
+	right: 8rem;
 }
 
 .duoButtons :nth-child(1) *,
 .duoButtons :nth-child(2) * {
-  right: auto;
+	right: auto;
 }
 
 .duoButtons :nth-child(2) {
-  position: absolute;
-  left: 8rem;
+	position: absolute;
+	left: 8rem;
 }
 
 .mainSettings {
-  display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
-  width: 90%;
-  height: 7vh;
-  margin: auto;
+	display: grid;
+	grid-template-columns: 1fr 1fr 1fr;
+	width: 90%;
+	height: 7vh;
+	margin: auto;
 }
 
 .mainSettingsButton {
-  width: 100%;
-  height: 100%;
-  display: flex;
-  justify-content: center;
+	width: 100%;
+	height: 100%;
+	display: flex;
+	justify-content: center;
 }
 
 .extraSettings {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  width: 100%;
-  margin: auto;
-  /* overflow-y: scroll;
-  overflow-x: auto; */
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	width: 100%;
+	margin: auto;
 }
 
 .editOptions {
-  margin-top: 6rem;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  width: 90%;
+	margin-top: 6rem;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	width: 90%;
 }
 
 .editSubOptionsContainer {
-  width: 100%;
+	width: 100%;
 }
 
 .editSubOptions {
-  display: flex;
-  justify-content: space-around;
-  box-sizing: border-box;
-  height: fit-content;
-  width: 100%;
-  padding: 1.3rem 0;
+	display: flex;
+	justify-content: space-around;
+	box-sizing: border-box;
+	height: fit-content;
+	width: 100%;
+	padding: 1.3rem 0;
 }
 
 .simpleLabel {
-  background-color: var(--pig-pink);
-  border: 0.3rem solid;
-  border-color: var(--white);
-  border-radius: 100px;
-  box-shadow: 1rem 1rem 0px var(--shadow-colour);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  height: 5rem;
-  min-width: 12rem;
+	background-color: var(--pig-pink);
+	border: 0.3rem solid;
+	border-color: var(--white);
+	border-radius: 100px;
+	box-shadow: 1rem 1rem 0px var(--shadow-colour);
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	height: 5rem;
+	min-width: 12rem;
 
-  color: var(--white);
-  font-family: var(--font-family-inder);
-  font-size: var(--font-size-s);
-  font-weight: 400;
-  font-style: normal;
-  letter-spacing: 0;
-  line-height: normal;
-  text-align: center;
+	color: var(--white);
+	font-family: var(--font-family-inder);
+	font-size: var(--font-size-s);
+	font-weight: 400;
+	font-style: normal;
+	letter-spacing: 0;
+	line-height: normal;
+	text-align: center;
 }
 
 .tiny {
-  min-width: 8rem;
+	min-width: 8rem;
 }
 
-/* .filterSettings {
-  width: 90%;
-  height: 7vh;
-  margin: auto;
-} */
-
 .filterOptionsContainer {
-  display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
-  width: 90%;
-  height: 7vh;
-  margin: 1rem auto;
+	display: grid;
+	grid-template-columns: 1fr 1fr 1fr;
+	width: 90%;
+	height: 7vh;
+	margin: 1rem auto;
 }
 
 .filterOptions {
-  width: 100%;
-  height: 100%;
-  display: flex;
-  justify-content: center;
-  /* make button larger */
+	width: 100%;
+	height: 100%;
+	display: flex;
+	justify-content: center;
 }
 
 .filterSubOptions {
-  /* FIX ALIGNMENT */
-  display: block !important;
-  justify-content: center;
-  align-items: center;
-  flex-direction: column;
+	display: block !important;
+	justify-content: center;
+	align-items: center;
+	flex-direction: column;
 }
 
 .filterSubOptions button {
-  margin-top: 2rem;
+	margin-top: 2rem;
 }
 
 @media screen and (min-width: 913px) {
-  .filterSettings {
-    width: 90%;
-    height: 7vh;
-    margin: auto;
-  }
+	.filterSettings {
+		width: 90%;
+		height: 7vh;
+		margin: auto;
+	}
 }
 
 .dualCol {
-  display: flex;
-  justify-content: space-around;
-  width: 90%;
-  margin: 2rem;
+	display: flex;
+	justify-content: space-around;
+	width: 90%;
+	margin: 2rem;
 }
 
 .dualColGreenScreen {
-  display: flex;
-  justify-content: space-around;
-  width: 90%;
-  margin: 1rem;
+	display: flex;
+	justify-content: space-around;
+	width: 90%;
+	margin: 1rem;
 }
 
 .noStretch {
-  display: flex;
-  justify-content: center;
-  margin: auto;
+	display: flex;
+	justify-content: center;
+	margin: auto;
 }
 
 .centerReset {
-  display: flex;
-  justify-content: center;
-  width: 100%;
+	display: flex;
+	justify-content: center;
+	width: 100%;
 }
 
 .dualColMinMax {
-  display: flex;
-  justify-content: space-around;
-  width: 90%;
-  margin: 1rem;
+	display: flex;
+	justify-content: space-around;
+	width: 90%;
+	margin: 1rem;
 }
 
 .desktopGreenScreen {
-  display: flex;
+	display: flex;
 }
 
 .dualColCaption {
-  display: grid;
-  grid-template-columns: 1fr 3fr;
-  margin: 1rem;
+	display: grid;
+	grid-template-columns: 1fr 3fr;
+	margin: 1rem;
 }
 
 .container {
-  display: flex;
-  justify-content: center;
-  align-items: center;
+	display: flex;
+	justify-content: center;
+	align-items: center;
 }
 
 .captionPreview {
-  width: 100%;
-  height: 12rem;
-  display: flex;
-  justify-content: center;
-  align-items: center;
+	width: 100%;
+	height: 12rem;
+	display: flex;
+	justify-content: center;
+	align-items: center;
 }
 
 .dualColCaptionPreview {
-  display: grid;
-  grid-template-columns: 1fr;
-  margin: 1rem;
+	display: grid;
+	grid-template-columns: 1fr;
+	margin: 1rem;
 }
 
 .containerRadio {
-  /* display: flex;
-  /* flex-direction: column; 
-  justify-content: center;
-  align-items: center; */
-  display: grid;
-  grid-template-columns: 1fr 1fr;
+	display: grid;
+	grid-template-columns: 1fr 1fr;
 }
 
 .radioContainer {
-  margin: 1rem;
-  display: flex;
+	margin: 1rem;
+	display: flex;
 }
 
 .greened {
-  background-color: var(--steel-blue) !important;
+	background-color: var(--steel-blue) !important;
 }
 
 .captionSettings {
-  margin-top: 0 !important;
-  display: flex;
-  flex-direction: column;
-  /* align-items: center; */
-  justify-content: center;
-  width: 90%;
-  height: 40vh;
-  overflow-y: scroll;
-  overflow-x: hidden;
-  position: relative;
+	margin-top: 0 !important;
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
+	width: 90%;
+	height: 40vh;
+	overflow-y: scroll;
+	overflow-x: hidden;
+	position: relative;
 }
 
 .captionOptionsContainer {
-  position: absolute !important;
-  width: 100% !important;
-  top: 0 !important;
+	position: absolute !important;
+	width: 100% !important;
+	top: 0 !important;
 }
 
 .captionOption {
-  /* margin-top: 10rem !important; */
-  width: 100%;
-  margin-bottom: 2rem !important;
+	width: 100%;
+	margin-bottom: 2rem !important;
 }
 
 .modalBackground {
-  z-index: 999999;
-  /* background-color: rgba(0, 0, 0, 0.249); */
-  position: absolute;
-  width: 100vw;
-  height: 100vh;
-  display: flex;
-  justify-content: center;
-  align-items: center;
+	z-index: 999999;
+	position: absolute;
+	width: 100vw;
+	height: 100vh;
+	display: flex;
+	justify-content: center;
+	align-items: center;
 }
 
 .modalContainer {
-  width: 100%;
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
+	width: 100%;
+	height: 100%;
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
+	align-items: center;
 }
 
 .finalGif {
-  border-radius: 1rem;
-  box-shadow: 1rem 1rem 0px var(--shadow-colour);
-  margin-bottom: 2rem;
+	border-radius: 1rem;
+	box-shadow: 1rem 1rem 0px var(--shadow-colour);
+	margin-bottom: 2rem;
 }
 
 .dualColGif {
-  display: flex;
-  justify-content: center;
+	display: flex;
+	justify-content: center;
 }
 
 .gifButton {
-  margin: 1rem 2rem;
+	margin: 1rem 2rem;
 }
 
 .shiftLeft {
-  margin-left: 2rem;
+	margin-left: 2rem;
 }
 
 .greenScreenColour {
-  margin: 2rem;
+	margin: 2rem;
 }
