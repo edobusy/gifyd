@@ -1,0 +1,6 @@
+services:
+  frontend:
+    command:
+      - "npm"
+      - "run"
+      - "test"
