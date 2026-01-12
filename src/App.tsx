@@ -108,7 +108,7 @@ function App() {
 		boxTransparency: "0.5",
 		boxBorderWidth: "5",
 		x: "(w-text_w)/2",
-		y: "(h-text_h)-(h-text_h)/20",
+		y: "(h-text_h)/2",
 	})
 
 	// Store the final GIF (ffmpeg) target dimensions so previews can be pixel-perfect
