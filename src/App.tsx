@@ -239,22 +239,29 @@ function App() {
 	const paintCanvasAtCurrentTime = async () => {
 		if (!ctx || !vidRef.current) return
 
-		// Make sure the video is at the correct start frame
+		// Pause video first to prevent browser repainting
+		vidRef.current.pause()
+
+		// Seek to startTime
 		vidRef.current.currentTime = startTime / 1000
 
-		// Wait until the video element has actually seeked
-		await new Promise((resolve) => {
-			const handleSeeked = () => {
-				vidRef.current?.removeEventListener("seeked", handleSeeked)
-				resolve(null)
+		// Wait for the seek to complete
+		await new Promise<void>((resolve) => {
+			const onSeeked = () => {
+				vidRef.current?.removeEventListener("seeked", onSeeked)
+				resolve()
 			}
-			vidRef.current?.addEventListener("seeked", handleSeeked)
+			vidRef.current?.addEventListener("seeked", onSeeked)
 		})
 
+		// Now the video frame is guaranteed to be the correct one
 		const width = vidRef.current.clientWidth
 		const height = vidRef.current.clientHeight
 
+		ctx.clearRect(0, 0, width, height) // make sure no old frame remains
 		ctx.drawImage(vidRef.current, 0, 0, width, height)
+
+		// If you have filters/callbacks
 		drawFrame(
 			ctx,
 			new Uint8ClampedArray(ctx.getImageData(0, 0, width, height).data.buffer),
