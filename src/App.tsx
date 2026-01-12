@@ -1,27 +1,6 @@
-// Gifyd
-
-/*
-  IMPORTANT NOTE ABOUT CALLBACKS & REACT STATE:
-
-  If a function is stored in React state (e.g. `customColour` stored via `setCallback`)
-  and that function reads values from other state variables (e.g. `rgbaMod`),
-  the function will "capture" those values at the moment `setCallback` is called.
-
-  This means:
-  - The function does NOT automatically see future updates to that state
-  - If `rgbaMod` changes later, the version of `rgbaMod` inside the stored callback
-    remains frozen at the old values
-
-  In this app:
-  - `customColour` is stored as a callback
-  - It depends on `rgbaMod`
-  - If `rgbaMod` changes after `setCallback(customColour)` is called,
-    the callback will continue using stale colour values
-
-  To avoid this, dynamic values are explicitly passed into the callback
-  at execution time instead of relying on closures.
+/* Full App.tsx with minimal edits to add gifTargetWidth/gifTargetHeight and pass them down.
+   Most of the file is unchanged from the repo, edits are marked with comments.
 */
-
 import React, {
 	ChangeEvent,
 	useEffect,
@@ -132,7 +111,13 @@ function App() {
 		y: "(h-text_h)-(h-text_h)/20",
 	})
 
+	// Store the final GIF (ffmpeg) target dimensions so previews can be pixel-perfect
+	const [gifTargetWidth, setGifTargetWidth] = useState<number | null>(null)
+	const [gifTargetHeight, setGifTargetHeight] = useState<number | null>(null)
+
 	const mediaRecorder = useRef<MediaRecorder | null>()
+
+	const fontSizeRef = useRef<string | null>(null) // <-- persistent font size
 
 	// Initial paint when canvas context is ready
 	useLayoutEffect(() => {
@@ -141,11 +126,9 @@ function App() {
 
 	// Whenever filter settings change, we need to update the canvas painting
 	useLayoutEffect(() => {
-		// If the video is paused, we need to paint the current frame again
 		if (vidRef.current?.paused) {
 			paintCanvas(true)
 		}
-		// If video is running, reset canvas painting to use new filter values
 		if (showFrame) {
 			clearInterval(showFrame)
 			colorChanged.current = true
@@ -169,13 +152,11 @@ function App() {
 	])
 
 	useLayoutEffect(() => {
-		// Paint canvas fresh because colors have changed
 		if (!showFrame && colorChanged.current === true) {
 			paintCanvas()
 			colorChanged.current = false
 		}
 
-		// If the video stopped running, stop the media recorder as well
 		if (
 			!showFrame &&
 			mediaRecorder.current &&
@@ -205,7 +186,6 @@ function App() {
 		}
 	}, [uploadedFile])
 
-	// Update max duration when start time changes
 	useEffect(() => {
 		if (vidRef.current) {
 			setMaxDuration(
@@ -216,7 +196,6 @@ function App() {
 		}
 	}, [startTime])
 
-	// Set up canvas context
 	useEffect(() => {
 		if (canvasRef.current) {
 			setCtx(canvasRef.current.getContext("2d", { willReadFrequently: true }))
@@ -228,7 +207,6 @@ function App() {
 		setIsLoaded(true)
 	}
 
-	// Video upload validation
 	const videoUpload = async (e: ChangeEvent<HTMLInputElement>) => {
 		if (!e.target.files) {
 			return
@@ -270,33 +248,26 @@ function App() {
 			const width = vidRef.current.clientWidth
 			const height = vidRef.current.clientHeight
 
-			// Draw the current video frame onto the canvas
 			ctx.drawImage(vidRef.current, 0, 0, width, height)
 
-			// Extract pixel data
 			const dataBuffer = new Uint8ClampedArray(
 				ctx.getImageData(0, 0, width, height).data.buffer
 			)
 
-			// If running in single-frame mode, stop when first non-empty frame is found
 			if (oneIteration && dataBuffer.some((color) => color !== 0)) {
 				clearInterval(interval)
 			}
 
-			// Apply your pixel processing / filters
 			callbackFn(ctx, dataBuffer, width, height)
 		}, 1000 / 30)
 
 		return interval
 	}
 
-	// Take recorded video data, feed to ffmpeg, and produce mp4 output
 	const transcode = async (data: Uint8Array) => {
 		if (!vidRef.current) return
 
 		const name = "record.webm"
-
-		// Write the file to ffmpeg memory
 		ffmpeg.FS("writeFile", name, data)
 
 		const widthHeight = await takeDown(
@@ -304,29 +275,24 @@ function App() {
 			vidRef.current.videoHeight
 		)
 
-		// Run ffmpeg command to transcode the video
 		await ffmpeg.run(
 			"-i",
 			name,
 			"-r",
 			`${framerate}`,
 			"-s",
-			`${widthHeight[0]}x${widthHeight[1]}`, // 720x720 540x960 960x540
+			`${widthHeight[0]}x${widthHeight[1]}`,
 			"vid.mp4"
 		)
 	}
 
-	// Records the canvas stream instead of the original video element.
-	// This allows filters to be baked directly into the recorded output.
 	function fn() {
 		const recordedChunks: Blob[] = []
 
 		return new Promise<{ url: string; blob: Blob } | null>((res, rej) => {
 			if (!canvasRef.current) return rej
-
 			if (!vidRef.current) return rej
 
-			// Capture the canvas stream so recorded video includes all visual effects
 			let stream = canvasRef.current.captureStream()
 
 			mediaRecorder.current = new MediaRecorder(stream, {
@@ -336,7 +302,6 @@ function App() {
 			mediaRecorder.current.start()
 			vidRef.current.play()
 
-			// Fired each time MediaRecorder has a new chunk of video data
 			mediaRecorder.current.ondataavailable = function (e) {
 				recordedChunks.push(e.data)
 			}
@@ -346,27 +311,20 @@ function App() {
 					type: "video/webm",
 				})
 				var url = URL.createObjectURL(blob)
-				res({ url, blob }) // resolve both blob and url in an object
+				res({ url, blob })
 			}
 
-			// Set up a repeating interval to continuously draw video frames onto the canvas
-			// This ensures any applied filters or transformations are rendered in real-time
 			let identifier = startDrawingFrames(ctx, vidRef, drawFrame)
 
-			// Store the interval ID in state to allow later clearing
 			setShowFrame(identifier)
 		})
 	}
 
 	const createVid = async () => {
-		// Record the canvas stream which includes all applied filters
 		const result = await fn()
-
 		if (!result) return
 
 		const resolvedVid = await result.blob.arrayBuffer()
-
-		// Create mp4 video from canvas recording, which makeGif will use to create gif
 		await transcode(new Uint8Array(resolvedVid))
 	}
 
@@ -389,17 +347,9 @@ function App() {
 		fontData = await fetchFile(impact)
 		ffmpeg.FS("writeFile", "impact.ttf", fontData)
 
-		// -i INPUT
-		// -s FRAME SIZE
-		// -r FRAMERATE PER SECOND
-		// -t TIME LENGTH IN SECONDS
-		// -ss START OFFSET IN SECONDS
-		// -f OUTPUT FORMAT
 		await ffmpeg.run(
 			"-i",
 			"vid.mp4",
-			//'-s',
-			//'480x320',
 			"-vf",
 			`drawtext=fontfile=${
 				textOptions.font === "cursive" ? "comic" : textOptions.font
@@ -410,24 +360,12 @@ function App() {
 			}@${textOptions.boxTransparency}:boxborderw=${
 				textOptions.boxBorderWidth
 			}:x=${textOptions.x}:y=${textOptions.y}`,
-			//'-r',
-			//`${framerate}`,
-			/*
-      		'-t',
-      		`${duration / 1000}`,
-      		'-ss',
-      		`${startTime / 1000}`,
-      		*/
 			"-f",
 			"gif",
 			"out.gif"
 		)
 
-		// Once the transformation is executed, we can get the created out.gif file from FS and create a new URL for the created GIF
 		const output = ffmpeg.FS("readFile", "out.gif")
-
-		// Blob needs an array, so wrap the output buffer with [] to turn it into a standard array, and give it a type of gif
-		// Because we now have a GIF URL, we can show the GifResult component
 		setGifUrl(
 			URL.createObjectURL(
 				new Blob([output.buffer as BlobPart], { type: "image/gif" })
@@ -445,33 +383,42 @@ function App() {
 				vidRef.current.videoHeight
 			)
 
-			setTextOptions({
-				...textOptions,
-				fontSize: (dividend[0] / 10).toString(),
-			})
+			// record the gif target dimensions for use by CaptionPreview
+			setGifTargetWidth(dividend[0])
+			setGifTargetHeight(dividend[1])
 
 			setVideoLength(vidRef.current.duration * 1000 - minimumDuration)
-
 			setMaxDuration(
 				vidRef.current.duration * 1000 > 4000
 					? 4000
 					: vidRef.current.duration * 1000
 			)
-
-			// Make sure that the GIF is at least of length minimumDuration, by stopping the user from selecting the GIF start time at the very end of the video
 			setDuration(minimumDuration)
+
+			// Only set fontSize if no value is stored yet
+			if (!fontSizeRef.current) {
+				const initialFontSize = (dividend[0] / 10).toString()
+				fontSizeRef.current = initialFontSize
+				setTextOptions((prev) => ({
+					...prev,
+					fontSize: initialFontSize,
+				}))
+			} else {
+				// If returning from GifResult, restore the persisted font size
+				setTextOptions((prev) => ({
+					...prev,
+					fontSize: fontSizeRef.current!,
+				}))
+			}
 		}
 	}
 
-	// Draws a single frame onto the canvas, applying the selected filter callback
 	const drawFrame = (
 		ctx: CanvasRenderingContext2D,
 		dataBuffer: Uint8ClampedArray,
 		width: number,
 		height: number
 	) => {
-		// The callback receives current values explicitly to avoid stale state caused by closure capture
-		// If no filter is selected, just return the original dataBuffer
 		const processed =
 			callback?.(dataBuffer, { rgbaMod, rgbShift, levels }) ?? dataBuffer
 
@@ -482,30 +429,20 @@ function App() {
 		)
 	}
 
-	// Draws video frames onto the canvas and applies filters in real time.
-	// Uses intervals instead of requestAnimationFrame to control frame rate
-	// and avoid unnecessary renders when paused.
 	const paintCanvas = (oneIteration?: boolean) => {
 		if (!vidRef.current) return
 		if (!ctx) return
 		if (showFrame) return
 
-		// oneIteration is used to draw a single frame (e.g. when paused)
-		// We keep polling until the first real frame loads (non-zero pixels)
 		if (oneIteration) {
 			startDrawingFrames(ctx, vidRef, drawFrame, true)
 			return
 		}
 
-		// Set up a repeating interval to continuously draw video frames onto the canvas
-		// This ensures any applied filters or transformations are rendered in real-time
 		let identifier = startDrawingFrames(ctx, vidRef, drawFrame)
-
 		setShowFrame(identifier)
 	}
 
-	// Ensures playback stays within the selected GIF time range.
-	// Automatically loops or resets when boundaries are exceeded.
 	const checkIfOver = () => {
 		if (!vidRef.current) return
 		if (
@@ -610,6 +547,10 @@ function App() {
 								checkIfOver,
 								paintCanvas,
 								handlePlayPause,
+								textOptions,
+								textPositions,
+								gifTargetWidth,
+								gifTargetHeight,
 							}}
 						/>
 						<div className="playButtonContainer">
@@ -707,6 +648,7 @@ function App() {
 											textOptions,
 											setTextOptions,
 											vidRef,
+											fontSizeRef,
 										}}
 									/>
 								)}

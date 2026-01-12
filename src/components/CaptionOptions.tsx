@@ -26,6 +26,7 @@ type Props = {
 	textOptions: VideoSettings
 	setTextOptions: React.Dispatch<SetStateAction<VideoSettings>>
 	vidRef: React.RefObject<HTMLVideoElement>
+	fontSizeRef: React.MutableRefObject<string | null>
 }
 
 // textPositions should be top bottom AND (h-text_h)/20 for top and (h-text_h)-(h-text_h)/20 for bottom
@@ -41,39 +42,11 @@ const CaptionOptions = (props: { captionOptions: Props }) => {
 		textOptions,
 		setTextOptions,
 		vidRef,
+		fontSizeRef,
 	} = props.captionOptions
 
 	return (
 		<div className="extraSettings">
-			<div className="dualColCaptionPreview">
-				<div className="container">
-					<label htmlFor="content" className="simpleLabel tilt">
-						Preview:
-					</label>
-				</div>
-				<div className="captionPreview">
-					<p
-						style={{
-							fontSize: textOptions.fontSize + "px",
-							backgroundColor: `rgba(${hexToRgb(textOptions.boxColour)?.r},${
-								hexToRgb(textOptions.boxColour)?.g
-							},${hexToRgb(textOptions.boxColour)?.b},${
-								textOptions.boxTransparency
-							})`,
-							color: `rgb(${hexToRgb(textOptions.textColour)?.r},${
-								hexToRgb(textOptions.textColour)?.g
-							},${hexToRgb(textOptions.textColour)?.b})`,
-							display: "inline-block",
-							lineHeight: "100%",
-							fontFamily: textOptions.font,
-							whiteSpace: "nowrap",
-							overflow: "hidden",
-						}}
-					>
-						{textOptions.content}
-					</p>
-				</div>
-			</div>
 			<div className="captionSettings">
 				<div className="captionOptionsContainer">
 					<div className="captionOption">
@@ -132,6 +105,7 @@ const CaptionOptions = (props: { captionOptions: Props }) => {
 											textOptions,
 											setTextOptions,
 											vidRef,
+											fontSizeRef,
 										}}
 									/>
 								))}
