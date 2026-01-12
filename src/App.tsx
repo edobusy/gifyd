@@ -202,6 +202,11 @@ function App() {
 		}
 	}, [canvasRef.current])
 
+	useEffect(() => {
+		if (gifUrl || !ctx || !vidRef.current) return
+		paintCanvasAtCurrentTime()
+	}, [gifUrl])
+
 	const loadFfmpeg = async () => {
 		await ffmpeg.load()
 		setIsLoaded(true)
@@ -229,6 +234,33 @@ function App() {
 			return
 		}
 		setuploadedFile(e.target.files[0])
+	}
+
+	const paintCanvasAtCurrentTime = async () => {
+		if (!ctx || !vidRef.current) return
+
+		// Make sure the video is at the correct start frame
+		vidRef.current.currentTime = startTime / 1000
+
+		// Wait until the video element has actually seeked
+		await new Promise((resolve) => {
+			const handleSeeked = () => {
+				vidRef.current?.removeEventListener("seeked", handleSeeked)
+				resolve(null)
+			}
+			vidRef.current?.addEventListener("seeked", handleSeeked)
+		})
+
+		const width = vidRef.current.clientWidth
+		const height = vidRef.current.clientHeight
+
+		ctx.drawImage(vidRef.current, 0, 0, width, height)
+		drawFrame(
+			ctx,
+			new Uint8ClampedArray(ctx.getImageData(0, 0, width, height).data.buffer),
+			width,
+			height
+		)
 	}
 
 	function startDrawingFrames(
