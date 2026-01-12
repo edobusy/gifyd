@@ -196,8 +196,6 @@
 	position: absolute;
 	opacity: 0;
 	z-index: -10000;
-	/*right: -10000px;
-  top: 10000px; */
 }
 
 .mainGrid {

@@ -279,7 +279,6 @@ const CaptionPreview = ({
 				width: displayedWidth,
 				height: displayedHeight,
 				pointerEvents: "none",
-				zIndex: 9999,
 				overflow: "hidden",
 				transform: "none",
 			}}

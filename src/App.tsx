@@ -337,6 +337,7 @@ function App() {
 		setShowSettings("")
 		vidRef.current.pause()
 		vidRef.current.currentTime = startTime / 1000
+		const content = textOptions.content.replace(":", "\\:")
 
 		await createVid()
 
@@ -353,13 +354,13 @@ function App() {
 			"-vf",
 			`drawtext=fontfile=${
 				textOptions.font === "cursive" ? "comic" : textOptions.font
-			}.ttf:text='${textOptions.content}':fontcolor=${
-				textOptions.textColour
-			}:fontsize=${textOptions.fontSize}:box=1:boxcolor=${
-				textOptions.boxColour
-			}@${textOptions.boxTransparency}:boxborderw=${
-				textOptions.boxBorderWidth
-			}:x=${textOptions.x}:y=${textOptions.y}`,
+			}.ttf:text='${content}':fontcolor=${textOptions.textColour}:fontsize=${
+				textOptions.fontSize
+			}:box=1:boxcolor=${textOptions.boxColour}@${
+				textOptions.boxTransparency
+			}:boxborderw=${textOptions.boxBorderWidth}:x=${textOptions.x}:y=${
+				textOptions.y
+			}`,
 			"-f",
 			"gif",
 			"out.gif"
