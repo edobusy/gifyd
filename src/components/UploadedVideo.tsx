@@ -14,9 +14,15 @@ type Props = {
 	vidRef: React.RefObject<HTMLVideoElement>
 	vidUrl: string
 	showSettings: string
-	showFrame: number | null
+	showFrame: {
+		stop: () => void
+	} | null
 	levels: FilterLevels
-	setShowFrame: React.Dispatch<React.SetStateAction<number | null>>
+	setShowFrame: React.Dispatch<
+		React.SetStateAction<{
+			stop: () => void
+		} | null>
+	>
 	videoReady: () => void
 	checkIfOver: () => void
 	paintCanvas: (oneIteration?: boolean) => void
@@ -74,9 +80,8 @@ const UploadedVideo = (props: { videoElements: Props }) => {
 						paintCanvas()
 					}}
 					onPause={() => {
-						// Stop frame polling when paused
 						if (showFrame) {
-							clearInterval(showFrame)
+							showFrame.stop()
 							setShowFrame(null)
 						}
 					}}

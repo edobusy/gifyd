@@ -67,7 +67,7 @@ function App() {
 
 	const canvasRef = useRef<HTMLCanvasElement>(null)
 	const [ctx, setCtx] = useState<CanvasRenderingContext2D | null>(null)
-	const [showFrame, setShowFrame] = useState<number | null>(null)
+	const [showFrame, setShowFrame] = useState<{ stop: () => void } | null>(null)
 
 	const [disablePlayPause, setDisablePlayPause] = useState(false)
 	const [isFocused, setIsFocused] = useState([false, false, false])
@@ -130,7 +130,7 @@ function App() {
 			paintCanvas(true)
 		}
 		if (showFrame) {
-			clearInterval(showFrame)
+			showFrame.stop() // ← CHANGED: Call the stop method
 			colorChanged.current = true
 			setShowFrame(null)
 		}
@@ -280,9 +280,12 @@ function App() {
 			height: number
 		) => void,
 		oneIteration: boolean = false
-	): number {
-		const interval = window.setInterval(() => {
-			if (!ctx || !vidRef.current) return
+	): { stop: () => void } {
+		let stopped = false
+		let callbackId: number | null = null
+
+		const processFrame = () => {
+			if (stopped || !ctx || !vidRef.current) return
 
 			const width = vidRef.current.clientWidth
 			const height = vidRef.current.clientHeight
@@ -294,13 +297,61 @@ function App() {
 			)
 
 			if (oneIteration && dataBuffer.some((color) => color !== 0)) {
-				clearInterval(interval)
+				stopped = true
+				return
 			}
 
 			callbackFn(ctx, dataBuffer, width, height)
-		}, 1000 / 30)
 
-		return interval
+			// Schedule next frame
+			if (
+				!stopped &&
+				vidRef.current &&
+				"requestVideoFrameCallback" in vidRef.current
+			) {
+				callbackId = (vidRef.current as any).requestVideoFrameCallback(
+					processFrame
+				)
+			}
+		}
+
+		// Start the loop
+		if (vidRef.current && "requestVideoFrameCallback" in vidRef.current) {
+			callbackId = (vidRef.current as any).requestVideoFrameCallback(
+				processFrame
+			)
+		} else {
+			// Fallback to setInterval with time tracking
+			console.warn("requestVideoFrameCallback not supported, using fallback")
+			let lastCapturedTime = -1
+			const interval = setInterval(() => {
+				if (!vidRef.current) return
+				const currentTime = vidRef.current.currentTime
+				if (Math.abs(currentTime - lastCapturedTime) < 0.001) return
+				lastCapturedTime = currentTime
+				processFrame()
+			}, 1000 / 30)
+
+			return {
+				stop: () => {
+					stopped = true
+					clearInterval(interval)
+				},
+			}
+		}
+
+		return {
+			stop: () => {
+				stopped = true
+				if (
+					callbackId !== null &&
+					vidRef.current &&
+					"cancelVideoFrameCallback" in vidRef.current
+				) {
+					;(vidRef.current as any).cancelVideoFrameCallback(callbackId)
+				}
+			},
+		}
 	}
 
 	const transcode = async (data: Uint8Array) => {
@@ -353,9 +404,8 @@ function App() {
 				res({ url, blob })
 			}
 
-			let identifier = startDrawingFrames(ctx, vidRef, drawFrame)
-
-			setShowFrame(identifier)
+			let frameController = startDrawingFrames(ctx, vidRef, drawFrame)
+			setShowFrame(frameController) // Now storing the object
 		})
 	}
 
@@ -479,8 +529,8 @@ function App() {
 			return
 		}
 
-		let identifier = startDrawingFrames(ctx, vidRef, drawFrame)
-		setShowFrame(identifier)
+		let frameController = startDrawingFrames(ctx, vidRef, drawFrame)
+		setShowFrame(frameController) // Now storing the object
 	}
 
 	const checkIfOver = () => {
