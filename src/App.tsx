@@ -46,6 +46,7 @@ import {
 	seekVideoToTime,
 	waitForVideoData,
 	waitForNextFrame,
+	waitForVideoFrameReady,
 	pauseVideo,
 	playVideo,
 } from "./utils/videoHelpers"
@@ -205,20 +206,37 @@ function App() {
 
 	// Paint initial frame when both video and canvas are ready
 	useEffect(() => {
-		if (!videoIsReady || !ctx || !vidRef.current) return
+		if (!videoIsReady || !ctx || !vidRef.current) {
+			return
+		}
 		if (gifUrl) return // Don't paint if showing GIF result
 
 		const paintInitialFrame = async () => {
 			try {
 				const video = vidRef.current
-				if (!video || !ctx) return
+				const canvas = canvasRef.current
+				if (!video || !ctx || !canvas) return
+
+				// CRITICAL: Wait for canvas to actually have dimensions
+				// The state might be set, but DOM might not be updated yet
+				if (canvas.width === 0 || canvas.height === 0) {
+					console.warn("Canvas has 0 dimensions, waiting for resize...")
+					// Canvas isn't sized yet - the state update hasn't propagated to DOM
+					// Wait for next frame and try again
+					await waitForNextFrame()
+
+					// Check again
+					if (canvas.width === 0 || canvas.height === 0) {
+						console.error("Canvas still has 0 dimensions after waiting")
+						return
+					}
+				}
 
 				// Ensure video is at the right position
 				await seekVideoToTime(video, startTime / 1000)
 
-				// Wait for decode - use multiple frames to be safe
-				await waitForNextFrame()
-				await waitForNextFrame()
+				// Wait for VIDEO to have decoded the frame
+				await waitForVideoFrameReady(video, canvasRef.current || undefined)
 
 				if (video.clientWidth > 0 && video.clientHeight > 0) {
 					await paintCanvasAtCurrentTime()
@@ -266,8 +284,8 @@ function App() {
 				// Seek to start and wait for seeked event
 				await seekVideoToTime(video, startTime / 1000)
 
-				// Wait for frame decode
-				await waitForNextFrame()
+				// Wait for VIDEO to have decoded the frame
+				await waitForVideoFrameReady(video, canvasRef.current || undefined)
 
 				// Now paint
 				if (video.clientWidth > 0 && video.clientHeight > 0) {
@@ -317,10 +335,17 @@ function App() {
 
 	// Event-driven: wait for actual events, not arbitrary timeouts
 	const paintCanvasAtCurrentTime = async () => {
-		if (!ctx || !vidRef.current) return
+		// Get current values - don't rely on closure!
+		const canvas = canvasRef.current
+		const currentCtx = canvas?.getContext("2d")
+		const video = vidRef.current
+
+		if (!currentCtx || !video || !canvas) {
+			console.warn("paintCanvasAtCurrentTime: missing ctx or video or canvas")
+			return
+		}
 
 		try {
-			const video = vidRef.current
 			const targetTime = startTime / 1000
 
 			// Pause and wait
@@ -329,8 +354,8 @@ function App() {
 			// Seek if needed
 			await seekVideoToTime(video, targetTime)
 
-			// Wait for frame decode
-			await waitForNextFrame()
+			// Wait for VIDEO to have decoded the frame
+			await waitForVideoFrameReady(video, canvas)
 
 			const width = video.clientWidth
 			const height = video.clientHeight
@@ -340,12 +365,18 @@ function App() {
 				return
 			}
 
-			ctx.clearRect(0, 0, width, height)
-			ctx.drawImage(video, 0, 0, width, height)
+			currentCtx.clearRect(0, 0, width, height)
+			currentCtx.drawImage(video, 0, 0, width, height)
 
-			const imageData = ctx.getImageData(0, 0, width, height)
+			const imageData = currentCtx.getImageData(0, 0, width, height)
 			const dataBuffer = new Uint8ClampedArray(imageData.data.buffer)
-			drawFrame(ctx, dataBuffer, width, height)
+
+			// Check if we actually drew something
+			const hasNonZeroPixels = dataBuffer.some(
+				(val, idx) => idx % 4 !== 3 && val !== 0
+			)
+
+			drawFrame(currentCtx, dataBuffer, width, height)
 		} catch (error) {
 			console.error("Paint error:", error)
 		}
@@ -367,6 +398,18 @@ function App() {
 
 		const processFrame = () => {
 			if (stopped || !ctx || !vidRef.current) return
+
+			// Check if we've reached the end BEFORE drawing
+			// This prevents drawing frames that are past the duration
+			const currentTimeMs = vidRef.current.currentTime * 1000
+			const endTimeMs = startTime + duration
+
+			if (currentTimeMs >= endTimeMs && !oneIteration) {
+				// We've hit the end - stop drawing and trigger checkIfOver
+				stopped = true
+				checkIfOver()
+				return
+			}
 
 			const width = vidRef.current.clientWidth
 			const height = vidRef.current.clientHeight
@@ -610,9 +653,8 @@ function App() {
 			// Seek to start
 			await seekVideoToTime(video, startTime / 1000)
 
-			// Wait for multiple frames to ensure decode
-			await waitForNextFrame()
-			await waitForNextFrame()
+			// Wait for VIDEO to have decoded the frame
+			await waitForVideoFrameReady(video, canvasRef.current || undefined)
 
 			// Mark video as ready - the useEffect will handle painting when ctx is ready
 			setVideoIsReady(true)
@@ -679,7 +721,9 @@ function App() {
 
 				await pauseVideo(video)
 				await seekVideoToTime(video, startTime / 1000)
-				await waitForNextFrame()
+
+				// Wait for VIDEO to have decoded the frame
+				await waitForVideoFrameReady(video, canvasRef.current || undefined)
 
 				// Paint with filters
 				if (ctx) {

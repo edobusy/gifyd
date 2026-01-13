@@ -87,21 +87,60 @@ export const waitForNextFrame = (): Promise<void> => {
 }
 
 /**
- * Wait for multiple animation frames
- * @param count - Number of frames to wait
+ * Wait for video frame to actually be drawable
+ * This is THE PROPER WAY - verify the frame can actually be drawn
+ * @param video - The video element  
+ * @param canvas - A canvas to test drawing on
+ * @param timeoutMs - Safety timeout (default 2000ms)
  */
-export const waitForFrames = (count: number): Promise<void> => {
-  return new Promise((resolve) => {
-    let remaining = count
-    const tick = () => {
-      remaining--
-      if (remaining > 0) {
-        requestAnimationFrame(tick)
-      } else {
-        resolve()
+export const waitForVideoFrameReady = (
+  video: HTMLVideoElement,
+  canvas?: HTMLCanvasElement,
+  timeoutMs: number = 2000
+): Promise<void> => {
+  return new Promise((resolve, reject) => {
+    const startTime = Date.now()
+    
+    const checkFrame = () => {
+      // If we have a canvas, test if we can actually draw a non-empty frame
+      if (canvas) {
+        const ctx = canvas.getContext('2d')
+        if (ctx && canvas.width > 0 && canvas.height > 0) {
+          // Save current canvas state
+          const savedData = ctx.getImageData(0, 0, canvas.width, canvas.height)
+          
+          // Try to draw the video (small sample for performance)
+          const sampleWidth = Math.min(canvas.width, 10)
+          const sampleHeight = Math.min(canvas.height, 10)
+          ctx.drawImage(video, 0, 0, sampleWidth, sampleHeight)
+          
+          // Check if we got any pixels
+          const imageData = ctx.getImageData(0, 0, sampleWidth, sampleHeight)
+          const hasPixels = imageData.data.some((val, idx) => idx % 4 !== 3 && val !== 0)
+          
+          // Restore canvas to original state (remove our test)
+          ctx.putImageData(savedData, 0, 0)
+          
+          if (hasPixels) {
+            // Frame is drawable!
+            resolve()
+            return
+          }
+        }
       }
+      
+      // Check timeout
+      if (Date.now() - startTime > timeoutMs) {
+        reject(new Error('Video frame ready timeout - frame never became drawable'))
+        return
+      }
+      
+      // Try again next frame
+      requestAnimationFrame(checkFrame)
     }
-    requestAnimationFrame(tick)
+    
+    // Start checking
+    requestAnimationFrame(checkFrame)
   })
 }
 
