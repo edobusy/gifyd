@@ -198,6 +198,33 @@ function App() {
 		}
 	}, [startTime])
 
+	// When startTime changes, repaint the canvas at the new position
+	useEffect(() => {
+		if (!videoIsReady || !ctx || !vidRef.current) return
+		if (gifUrl) return // Don't repaint if showing GIF
+
+		const repaintAtNewStartTime = async () => {
+			try {
+				const video = vidRef.current
+				const canvas = canvasRef.current
+				if (!video || !canvas) return
+
+				// Seek to new start time
+				await seekVideoToTime(video, startTime / 1000)
+
+				// Wait for frame to be drawable
+				await waitForVideoFrameReady(video, canvas)
+
+				// Paint the new frame
+				await paintCanvasAtCurrentTime()
+			} catch (error) {
+				console.error("Error repainting at new startTime:", error)
+			}
+		}
+
+		repaintAtNewStartTime()
+	}, [startTime, videoIsReady, ctx, gifUrl])
+
 	useEffect(() => {
 		if (canvasRef.current) {
 			setCtx(canvasRef.current.getContext("2d", { willReadFrequently: true }))
