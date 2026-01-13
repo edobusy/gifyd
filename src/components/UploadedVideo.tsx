@@ -80,10 +80,16 @@ const UploadedVideo = (props: { videoElements: Props }) => {
 						paintCanvas()
 					}}
 					onPause={() => {
+						// Stop the continuous drawing loop
 						if (showFrame) {
 							showFrame.stop()
 							setShowFrame(null)
 						}
+
+						// Wait for video to settle, then paint with filters
+						setTimeout(() => {
+							paintCanvas(true)
+						}, 50)
 					}}
 				>
 					<source src={vidUrl} />

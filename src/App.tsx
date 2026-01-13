@@ -120,9 +120,9 @@ function App() {
 	const fontSizeRef = useRef<string | null>(null) // <-- persistent font size
 
 	// Initial paint when canvas context is ready
-	useLayoutEffect(() => {
-		paintCanvas(true)
-	}, [ctx])
+	// useLayoutEffect(() => {
+	//   paintCanvas(true)
+	// }, [ctx])
 
 	// Whenever filter settings change, we need to update the canvas painting
 	useLayoutEffect(() => {
@@ -204,8 +204,41 @@ function App() {
 
 	useEffect(() => {
 		if (gifUrl || !ctx || !vidRef.current) return
-		paintCanvasAtCurrentTime()
+
+		const repaint = async () => {
+			if (!vidRef.current || !ctx) return
+
+			vidRef.current.pause()
+			vidRef.current.currentTime = startTime / 1000
+
+			await new Promise<void>((resolve) => {
+				const timeout = setTimeout(resolve, 500)
+				const onSeeked = () => {
+					clearTimeout(timeout)
+					vidRef.current?.removeEventListener("seeked", onSeeked)
+					resolve()
+				}
+				vidRef.current?.addEventListener("seeked", onSeeked, { once: true })
+			})
+
+			setTimeout(() => {
+				paintCanvasAtCurrentTime()
+			}, 50)
+		}
+
+		repaint()
 	}, [gifUrl])
+
+	useEffect(() => {
+		// When returning from GIF result, ensure video is painted
+		if (!gifUrl && vidUrl && ctx && vidRef.current) {
+			const timer = setTimeout(() => {
+				paintCanvasAtCurrentTime()
+			}, 100)
+
+			return () => clearTimeout(timer)
+		}
+	}, [gifUrl, vidUrl])
 
 	const loadFfmpeg = async () => {
 		await ffmpeg.load()
@@ -239,29 +272,43 @@ function App() {
 	const paintCanvasAtCurrentTime = async () => {
 		if (!ctx || !vidRef.current) return
 
-		// Pause video first to prevent browser repainting
 		vidRef.current.pause()
 
-		// Seek to startTime
-		vidRef.current.currentTime = startTime / 1000
+		const targetTime = startTime / 1000
 
-		// Wait for the seek to complete
-		await new Promise<void>((resolve) => {
-			const onSeeked = () => {
-				vidRef.current?.removeEventListener("seeked", onSeeked)
-				resolve()
-			}
-			vidRef.current?.addEventListener("seeked", onSeeked)
-		})
+		// Only seek if we're not already there
+		if (Math.abs(vidRef.current.currentTime - targetTime) > 0.01) {
+			vidRef.current.currentTime = targetTime
 
-		// Now the video frame is guaranteed to be the correct one
+			await new Promise<void>((resolve) => {
+				const timeout = setTimeout(() => {
+					vidRef.current?.removeEventListener("seeked", onSeeked)
+					resolve()
+				}, 1000)
+
+				const onSeeked = () => {
+					clearTimeout(timeout)
+					vidRef.current?.removeEventListener("seeked", onSeeked)
+					resolve()
+				}
+				vidRef.current?.addEventListener("seeked", onSeeked, { once: true })
+			})
+		}
+
+		// Small delay to ensure frame is decoded
+		await new Promise((resolve) => setTimeout(resolve, 50))
+
 		const width = vidRef.current.clientWidth
 		const height = vidRef.current.clientHeight
 
-		ctx.clearRect(0, 0, width, height) // make sure no old frame remains
+		if (width === 0 || height === 0) {
+			console.warn("Video has invalid dimensions")
+			return
+		}
+
+		ctx.clearRect(0, 0, width, height)
 		ctx.drawImage(vidRef.current, 0, 0, width, height)
 
-		// If you have filters/callbacks
 		drawFrame(
 			ctx,
 			new Uint8ClampedArray(ctx.getImageData(0, 0, width, height).data.buffer),
@@ -290,22 +337,27 @@ function App() {
 			const width = vidRef.current.clientWidth
 			const height = vidRef.current.clientHeight
 
+			if (width === 0 || height === 0) return
+
 			ctx.drawImage(vidRef.current, 0, 0, width, height)
 
 			const dataBuffer = new Uint8ClampedArray(
 				ctx.getImageData(0, 0, width, height).data.buffer
 			)
 
+			// MOVE THIS UP - Apply filters FIRST
+			callbackFn(ctx, dataBuffer, width, height)
+
+			// THEN check if we should stop
 			if (oneIteration && dataBuffer.some((color) => color !== 0)) {
 				stopped = true
 				return
 			}
 
-			callbackFn(ctx, dataBuffer, width, height)
-
-			// Schedule next frame
+			// Schedule next frame (only if not oneIteration and not stopped)
 			if (
 				!stopped &&
+				!oneIteration &&
 				vidRef.current &&
 				"requestVideoFrameCallback" in vidRef.current
 			) {
@@ -315,7 +367,27 @@ function App() {
 			}
 		}
 
-		// Start the loop
+		// Handle oneIteration case - draw immediately for paused video
+		if (oneIteration) {
+			// Check if video has valid dimensions first
+			if (!vidRef.current || vidRef.current.clientWidth === 0) {
+				// Video not ready yet, wait for next frame
+				requestAnimationFrame(() => {
+					if (!stopped) processFrame()
+				})
+			} else {
+				// Video is ready, draw immediately
+				processFrame()
+			}
+
+			return {
+				stop: () => {
+					stopped = true
+				},
+			}
+		}
+
+		// For continuous drawing, use video frame callback
 		if (vidRef.current && "requestVideoFrameCallback" in vidRef.current) {
 			callbackId = (vidRef.current as any).requestVideoFrameCallback(
 				processFrame
@@ -473,7 +545,6 @@ function App() {
 				vidRef.current.videoHeight
 			)
 
-			// record the gif target dimensions for use by CaptionPreview
 			setGifTargetWidth(dividend[0])
 			setGifTargetHeight(dividend[1])
 
@@ -485,7 +556,6 @@ function App() {
 			)
 			setDuration(minimumDuration)
 
-			// Only set fontSize if no value is stored yet
 			if (!fontSizeRef.current) {
 				const initialFontSize = (dividend[0] / 10).toString()
 				fontSizeRef.current = initialFontSize
@@ -494,11 +564,31 @@ function App() {
 					fontSize: initialFontSize,
 				}))
 			} else {
-				// If returning from GifResult, restore the persisted font size
 				setTextOptions((prev) => ({
 					...prev,
 					fontSize: fontSizeRef.current!,
 				}))
+			}
+
+			// NEW: Paint the initial frame after video is ready
+			vidRef.current.currentTime = startTime / 1000
+
+			// Wait for seek to complete
+			await new Promise<void>((resolve) => {
+				const timeout = setTimeout(resolve, 500)
+				const onSeeked = () => {
+					clearTimeout(timeout)
+					vidRef.current?.removeEventListener("seeked", onSeeked)
+					resolve()
+				}
+				vidRef.current?.addEventListener("seeked", onSeeked, { once: true })
+			})
+
+			// Now paint the canvas
+			if (ctx) {
+				setTimeout(() => {
+					paintCanvasAtCurrentTime()
+				}, 50)
 			}
 		}
 	}
