@@ -1,6 +1,4 @@
-/* Full App.tsx with minimal edits to add gifTargetWidth/gifTargetHeight and pass them down.
-   Most of the file is unchanged from the repo, edits are marked with comments.
-*/
+/* Full App.tsx with event-driven improvements - no hardcoded timeouts */
 import React, {
 	ChangeEvent,
 	useEffect,
@@ -44,6 +42,13 @@ import {
 import FileUploader from "./components/generic/FileUploader"
 import Button from "./components/generic/Button"
 import GifResult from "./components/GifResult"
+import {
+	seekVideoToTime,
+	waitForVideoData,
+	waitForNextFrame,
+	pauseVideo,
+	playVideo,
+} from "./utils/videoHelpers"
 
 const ffmpeg = createFFmpeg({ log: false })
 
@@ -111,18 +116,16 @@ function App() {
 		y: "(h-text_h)/2",
 	})
 
-	// Store the final GIF (ffmpeg) target dimensions so previews can be pixel-perfect
 	const [gifTargetWidth, setGifTargetWidth] = useState<number | null>(null)
 	const [gifTargetHeight, setGifTargetHeight] = useState<number | null>(null)
 
 	const mediaRecorder = useRef<MediaRecorder | null>()
-
-	const fontSizeRef = useRef<string | null>(null) // <-- persistent font size
-
-	// Initial paint when canvas context is ready
-	// useLayoutEffect(() => {
-	//   paintCanvas(true)
-	// }, [ctx])
+	const fontSizeRef = useRef<string | null>(null)
+	const [videoIsReady, setVideoIsReady] = useState(false)
+	const [canvasDimensions, setCanvasDimensions] = useState({
+		width: 0,
+		height: 0,
+	})
 
 	// Whenever filter settings change, we need to update the canvas painting
 	useLayoutEffect(() => {
@@ -130,7 +133,7 @@ function App() {
 			paintCanvas(true)
 		}
 		if (showFrame) {
-			showFrame.stop() // ← CHANGED: Call the stop method
+			showFrame.stop()
 			colorChanged.current = true
 			setShowFrame(null)
 		}
@@ -166,12 +169,10 @@ function App() {
 		}
 	}, [showFrame])
 
-	// Load ffmpeg.wasm on initial app load
 	useEffect(() => {
 		loadFfmpeg()
 	}, [])
 
-	// Create video URL when a file is uploaded
 	useEffect(() => {
 		const fileURL = ""
 
@@ -202,43 +203,88 @@ function App() {
 		}
 	}, [canvasRef.current])
 
+	// Paint initial frame when both video and canvas are ready
 	useEffect(() => {
-		if (gifUrl || !ctx || !vidRef.current) return
+		if (!videoIsReady || !ctx || !vidRef.current) return
+		if (gifUrl) return // Don't paint if showing GIF result
 
-		const repaint = async () => {
-			if (!vidRef.current || !ctx) return
+		const paintInitialFrame = async () => {
+			try {
+				const video = vidRef.current
+				if (!video || !ctx) return
 
-			vidRef.current.pause()
-			vidRef.current.currentTime = startTime / 1000
+				// Ensure video is at the right position
+				await seekVideoToTime(video, startTime / 1000)
 
-			await new Promise<void>((resolve) => {
-				const timeout = setTimeout(resolve, 500)
-				const onSeeked = () => {
-					clearTimeout(timeout)
-					vidRef.current?.removeEventListener("seeked", onSeeked)
-					resolve()
+				// Wait for decode - use multiple frames to be safe
+				await waitForNextFrame()
+				await waitForNextFrame()
+
+				if (video.clientWidth > 0 && video.clientHeight > 0) {
+					await paintCanvasAtCurrentTime()
+				} else {
+					console.warn(
+						"Video has invalid dimensions:",
+						video.clientWidth,
+						"x",
+						video.clientHeight
+					)
 				}
-				vidRef.current?.addEventListener("seeked", onSeeked, { once: true })
-			})
-
-			setTimeout(() => {
-				paintCanvasAtCurrentTime()
-			}, 50)
+			} catch (error) {
+				console.error("Initial paint error:", error)
+			}
 		}
 
-		repaint()
-	}, [gifUrl])
+		paintInitialFrame()
+	}, [videoIsReady, ctx, gifUrl])
 
+	// Handle returning from GIF result - event-driven, no hardcoded timeouts
 	useEffect(() => {
-		// When returning from GIF result, ensure video is painted
-		if (!gifUrl && vidUrl && ctx && vidRef.current) {
-			const timer = setTimeout(() => {
-				paintCanvasAtCurrentTime()
-			}, 100)
-
-			return () => clearTimeout(timer)
+		if (gifUrl) {
+			// Reset videoIsReady when showing GIF
+			setVideoIsReady(false)
+			return
 		}
-	}, [gifUrl, vidUrl])
+		if (!vidUrl || !ctx || !vidRef.current) return
+		if (!videoIsReady) return // Wait for video to be ready first
+
+		const reinitializeVideo = async () => {
+			try {
+				if (!vidRef.current || !ctx) return
+
+				const video = vidRef.current
+
+				// Pause and wait for pause event
+				await pauseVideo(video)
+
+				// Stop any frame drawing
+				if (showFrame) {
+					showFrame.stop()
+					setShowFrame(null)
+				}
+
+				// Seek to start and wait for seeked event
+				await seekVideoToTime(video, startTime / 1000)
+
+				// Wait for frame decode
+				await waitForNextFrame()
+
+				// Now paint
+				if (video.clientWidth > 0 && video.clientHeight > 0) {
+					await paintCanvasAtCurrentTime()
+				}
+			} catch (error) {
+				console.error("Reinitialization error:", error)
+				try {
+					await paintCanvasAtCurrentTime()
+				} catch (e) {
+					console.error("Paint fallback failed:", e)
+				}
+			}
+		}
+
+		reinitializeVideo()
+	}, [gifUrl, vidUrl, ctx, videoIsReady])
 
 	const loadFfmpeg = async () => {
 		await ffmpeg.load()
@@ -269,52 +315,40 @@ function App() {
 		setuploadedFile(e.target.files[0])
 	}
 
+	// Event-driven: wait for actual events, not arbitrary timeouts
 	const paintCanvasAtCurrentTime = async () => {
 		if (!ctx || !vidRef.current) return
 
-		vidRef.current.pause()
+		try {
+			const video = vidRef.current
+			const targetTime = startTime / 1000
 
-		const targetTime = startTime / 1000
+			// Pause and wait
+			await pauseVideo(video)
 
-		// Only seek if we're not already there
-		if (Math.abs(vidRef.current.currentTime - targetTime) > 0.01) {
-			vidRef.current.currentTime = targetTime
+			// Seek if needed
+			await seekVideoToTime(video, targetTime)
 
-			await new Promise<void>((resolve) => {
-				const timeout = setTimeout(() => {
-					vidRef.current?.removeEventListener("seeked", onSeeked)
-					resolve()
-				}, 1000)
+			// Wait for frame decode
+			await waitForNextFrame()
 
-				const onSeeked = () => {
-					clearTimeout(timeout)
-					vidRef.current?.removeEventListener("seeked", onSeeked)
-					resolve()
-				}
-				vidRef.current?.addEventListener("seeked", onSeeked, { once: true })
-			})
+			const width = video.clientWidth
+			const height = video.clientHeight
+
+			if (width === 0 || height === 0) {
+				console.warn("Video has invalid dimensions")
+				return
+			}
+
+			ctx.clearRect(0, 0, width, height)
+			ctx.drawImage(video, 0, 0, width, height)
+
+			const imageData = ctx.getImageData(0, 0, width, height)
+			const dataBuffer = new Uint8ClampedArray(imageData.data.buffer)
+			drawFrame(ctx, dataBuffer, width, height)
+		} catch (error) {
+			console.error("Paint error:", error)
 		}
-
-		// Small delay to ensure frame is decoded
-		await new Promise((resolve) => setTimeout(resolve, 50))
-
-		const width = vidRef.current.clientWidth
-		const height = vidRef.current.clientHeight
-
-		if (width === 0 || height === 0) {
-			console.warn("Video has invalid dimensions")
-			return
-		}
-
-		ctx.clearRect(0, 0, width, height)
-		ctx.drawImage(vidRef.current, 0, 0, width, height)
-
-		drawFrame(
-			ctx,
-			new Uint8ClampedArray(ctx.getImageData(0, 0, width, height).data.buffer),
-			width,
-			height
-		)
 	}
 
 	function startDrawingFrames(
@@ -345,7 +379,7 @@ function App() {
 				ctx.getImageData(0, 0, width, height).data.buffer
 			)
 
-			// MOVE THIS UP - Apply filters FIRST
+			// Apply filters FIRST
 			callbackFn(ctx, dataBuffer, width, height)
 
 			// THEN check if we should stop
@@ -354,7 +388,6 @@ function App() {
 				return
 			}
 
-			// Schedule next frame (only if not oneIteration and not stopped)
 			if (
 				!stopped &&
 				!oneIteration &&
@@ -367,16 +400,12 @@ function App() {
 			}
 		}
 
-		// Handle oneIteration case - draw immediately for paused video
 		if (oneIteration) {
-			// Check if video has valid dimensions first
 			if (!vidRef.current || vidRef.current.clientWidth === 0) {
-				// Video not ready yet, wait for next frame
 				requestAnimationFrame(() => {
 					if (!stopped) processFrame()
 				})
 			} else {
-				// Video is ready, draw immediately
 				processFrame()
 			}
 
@@ -387,13 +416,11 @@ function App() {
 			}
 		}
 
-		// For continuous drawing, use video frame callback
 		if (vidRef.current && "requestVideoFrameCallback" in vidRef.current) {
 			callbackId = (vidRef.current as any).requestVideoFrameCallback(
 				processFrame
 			)
 		} else {
-			// Fallback to setInterval with time tracking
 			console.warn("requestVideoFrameCallback not supported, using fallback")
 			let lastCapturedTime = -1
 			const interval = setInterval(() => {
@@ -477,7 +504,7 @@ function App() {
 			}
 
 			let frameController = startDrawingFrames(ctx, vidRef, drawFrame)
-			setShowFrame(frameController) // Now storing the object
+			setShowFrame(frameController)
 		})
 	}
 
@@ -538,21 +565,26 @@ function App() {
 		setDisablePlayPause(false)
 	}
 
+	// Event-driven: wait for actual video ready state
 	const videoReady = async () => {
-		if (vidRef.current) {
-			const dividend = await takeDown(
-				vidRef.current.videoWidth,
-				vidRef.current.videoHeight
-			)
+		if (!vidRef.current) return
+
+		try {
+			const video = vidRef.current
+
+			// Ensure video has loaded enough data
+			if (video.readyState < 2) {
+				await waitForVideoData(video)
+			}
+
+			const dividend = await takeDown(video.videoWidth, video.videoHeight)
 
 			setGifTargetWidth(dividend[0])
 			setGifTargetHeight(dividend[1])
 
-			setVideoLength(vidRef.current.duration * 1000 - minimumDuration)
+			setVideoLength(video.duration * 1000 - minimumDuration)
 			setMaxDuration(
-				vidRef.current.duration * 1000 > 4000
-					? 4000
-					: vidRef.current.duration * 1000
+				video.duration * 1000 > 4000 ? 4000 : video.duration * 1000
 			)
 			setDuration(minimumDuration)
 
@@ -570,26 +602,24 @@ function App() {
 				}))
 			}
 
-			// NEW: Paint the initial frame after video is ready
-			vidRef.current.currentTime = startTime / 1000
+			// Set canvas dimensions based on video clientWidth/Height
+			const width = video.clientWidth
+			const height = video.clientHeight
+			setCanvasDimensions({ width, height })
 
-			// Wait for seek to complete
-			await new Promise<void>((resolve) => {
-				const timeout = setTimeout(resolve, 500)
-				const onSeeked = () => {
-					clearTimeout(timeout)
-					vidRef.current?.removeEventListener("seeked", onSeeked)
-					resolve()
-				}
-				vidRef.current?.addEventListener("seeked", onSeeked, { once: true })
-			})
+			// Seek to start
+			await seekVideoToTime(video, startTime / 1000)
 
-			// Now paint the canvas
-			if (ctx) {
-				setTimeout(() => {
-					paintCanvasAtCurrentTime()
-				}, 50)
-			}
+			// Wait for multiple frames to ensure decode
+			await waitForNextFrame()
+			await waitForNextFrame()
+
+			// Mark video as ready - the useEffect will handle painting when ctx is ready
+			setVideoIsReady(true)
+		} catch (error) {
+			console.error("videoReady error:", error)
+			// Still mark as ready even on error so user can interact
+			setVideoIsReady(true)
 		}
 	}
 
@@ -620,25 +650,53 @@ function App() {
 		}
 
 		let frameController = startDrawingFrames(ctx, vidRef, drawFrame)
-		setShowFrame(frameController) // Now storing the object
+		setShowFrame(frameController)
 	}
 
-	const checkIfOver = () => {
+	// Event-driven: wait for seek and frame decode
+	const checkIfOver = async () => {
 		if (!vidRef.current) return
+
 		if (
 			vidRef.current.currentTime * 1000 >= videoLength &&
 			vidRef.current.paused
 		) {
-			vidRef.current.currentTime = startTime / 1000
-			vidRef.current.play()
+			try {
+				await seekVideoToTime(vidRef.current, startTime / 1000)
+				await playVideo(vidRef.current)
+			} catch (error) {
+				console.error("checkIfOver play error:", error)
+			}
 			return
 		}
+
 		if (
 			vidRef.current.currentTime * 1000 >= startTime + duration ||
 			vidRef.current.currentTime * 1000 < startTime
 		) {
-			vidRef.current.pause()
-			vidRef.current.currentTime = startTime / 1000
+			try {
+				const video = vidRef.current
+
+				await pauseVideo(video)
+				await seekVideoToTime(video, startTime / 1000)
+				await waitForNextFrame()
+
+				// Paint with filters
+				if (ctx) {
+					const width = video.clientWidth
+					const height = video.clientHeight
+
+					if (width > 0 && height > 0) {
+						ctx.drawImage(video, 0, 0, width, height)
+						const dataBuffer = new Uint8ClampedArray(
+							ctx.getImageData(0, 0, width, height).data.buffer
+						)
+						drawFrame(ctx, dataBuffer, width, height)
+					}
+				}
+			} catch (error) {
+				console.error("checkIfOver error:", error)
+			}
 		}
 	}
 
@@ -731,6 +789,7 @@ function App() {
 								textPositions,
 								gifTargetWidth,
 								gifTargetHeight,
+								canvasDimensions,
 							}}
 						/>
 						<div className="playButtonContainer">

@@ -2,6 +2,7 @@ import React from "react"
 import { settings } from "../interfaces/enums"
 import { FilterLevels, VideoSettings } from "../interfaces/types"
 import CaptionPreview from "./Caption/CaptionPreview"
+import { waitForNextFrame } from "../utils/videoHelpers"
 
 type TextPosition = {
 	positionName: string
@@ -31,6 +32,7 @@ type Props = {
 	textPositions: TextPosition[]
 	gifTargetWidth?: number | null
 	gifTargetHeight?: number | null
+	canvasDimensions: { width: number; height: number }
 }
 
 // Wrapper component responsible for:
@@ -55,6 +57,7 @@ const UploadedVideo = (props: { videoElements: Props }) => {
 		textPositions,
 		gifTargetWidth,
 		gifTargetHeight,
+		canvasDimensions,
 	} = props.videoElements
 
 	return (
@@ -79,17 +82,20 @@ const UploadedVideo = (props: { videoElements: Props }) => {
 					onPlay={() => {
 						paintCanvas()
 					}}
-					onPause={() => {
+					onPause={async () => {
 						// Stop the continuous drawing loop
 						if (showFrame) {
 							showFrame.stop()
 							setShowFrame(null)
 						}
 
-						// Wait for video to settle, then paint with filters
-						setTimeout(() => {
+						// Event-driven: wait for frame decode, then paint with filters
+						try {
+							await waitForNextFrame()
 							paintCanvas(true)
-						}, 50)
+						} catch (error) {
+							console.error("onPause paint error:", error)
+						}
 					}}
 				>
 					<source src={vidUrl} />
@@ -109,8 +115,8 @@ const UploadedVideo = (props: { videoElements: Props }) => {
 				<canvas
 					title="canvas"
 					ref={canvasRef}
-					width={vidRef.current?.clientWidth || 0}
-					height={vidRef.current?.clientHeight || 0}
+					width={canvasDimensions.width || vidRef.current?.clientWidth || 0}
+					height={canvasDimensions.height || vidRef.current?.clientHeight || 0}
 					className={"canvasVid"}
 				/>
 
