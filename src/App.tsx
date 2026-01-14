@@ -155,6 +155,22 @@ function App() {
 		levels.background,
 	])
 
+	// Event-driven: when framerate changes, restart the preview animation
+	useEffect(() => {
+		// Only restart if video is currently playing
+		if (!vidRef.current || vidRef.current.paused || !showFrame) return
+
+		// Stop the current animation
+		showFrame.stop()
+		setShowFrame(null)
+
+		// Restart with new framerate
+		if (ctx) {
+			const frameController = startDrawingFrames(ctx, vidRef, drawFrame)
+			setShowFrame(frameController)
+		}
+	}, [framerate])
+
 	useLayoutEffect(() => {
 		if (!showFrame && colorChanged.current === true) {
 			paintCanvas()
@@ -362,12 +378,11 @@ function App() {
 
 	// Event-driven: wait for actual events, not arbitrary timeouts
 	const paintCanvasAtCurrentTime = async () => {
-		// Get current values - don't rely on closure!
+		// Use the stored context that has willReadFrequently set
 		const canvas = canvasRef.current
-		const currentCtx = canvas?.getContext("2d")
 		const video = vidRef.current
 
-		if (!currentCtx || !video || !canvas) {
+		if (!ctx || !video || !canvas) {
 			console.warn("paintCanvasAtCurrentTime: missing ctx or video or canvas")
 			return
 		}
@@ -392,10 +407,10 @@ function App() {
 				return
 			}
 
-			currentCtx.clearRect(0, 0, width, height)
-			currentCtx.drawImage(video, 0, 0, width, height)
+			ctx.clearRect(0, 0, width, height)
+			ctx.drawImage(video, 0, 0, width, height)
 
-			const imageData = currentCtx.getImageData(0, 0, width, height)
+			const imageData = ctx.getImageData(0, 0, width, height)
 			const dataBuffer = new Uint8ClampedArray(imageData.data.buffer)
 
 			// Check if we actually drew something
@@ -403,7 +418,7 @@ function App() {
 				(val, idx) => idx % 4 !== 3 && val !== 0
 			)
 
-			drawFrame(currentCtx, dataBuffer, width, height)
+			drawFrame(ctx, dataBuffer, width, height)
 		} catch (error) {
 			console.error("Paint error:", error)
 		}
@@ -422,9 +437,31 @@ function App() {
 	): { stop: () => void } {
 		let stopped = false
 		let callbackId: number | null = null
+		let lastFrameTime = 0
+		// Calculate frame interval in milliseconds based on user's framerate setting
+		const frameInterval = 1000 / framerate
 
-		const processFrame = () => {
+		const processFrame = (now?: number) => {
 			if (stopped || !ctx || !vidRef.current) return
+
+			// For throttling based on framerate, check time elapsed
+			if (now !== undefined && !oneIteration) {
+				const elapsed = now - lastFrameTime
+				// Only draw if enough time has passed for the target framerate
+				if (elapsed < frameInterval) {
+					// Not enough time passed, schedule next check
+					if (
+						vidRef.current &&
+						"requestVideoFrameCallback" in vidRef.current
+					) {
+						callbackId = (vidRef.current as any).requestVideoFrameCallback(
+							processFrame
+						)
+					}
+					return
+				}
+				lastFrameTime = now
+			}
 
 			// Check if we've reached the end BEFORE drawing
 			// This prevents drawing frames that are past the duration
@@ -487,19 +524,18 @@ function App() {
 		}
 
 		if (vidRef.current && "requestVideoFrameCallback" in vidRef.current) {
+			// Initialize with current timestamp
+			lastFrameTime = performance.now()
 			callbackId = (vidRef.current as any).requestVideoFrameCallback(
 				processFrame
 			)
 		} else {
 			console.warn("requestVideoFrameCallback not supported, using fallback")
-			let lastCapturedTime = -1
+			// Fallback uses the framerate-based interval directly
 			const interval = setInterval(() => {
 				if (!vidRef.current) return
-				const currentTime = vidRef.current.currentTime
-				if (Math.abs(currentTime - lastCapturedTime) < 0.001) return
-				lastCapturedTime = currentTime
 				processFrame()
-			}, 1000 / 30)
+			}, frameInterval)
 
 			return {
 				stop: () => {
@@ -656,7 +692,11 @@ function App() {
 			setMaxDuration(
 				video.duration * 1000 > 4000 ? 4000 : video.duration * 1000
 			)
-			setDuration(minimumDuration)
+			// Only reset duration if it's still at the default minimum
+			// This preserves user's duration choice when returning from GIF result
+			if (duration === minimumDuration) {
+				setDuration(minimumDuration)
+			}
 
 			if (!fontSizeRef.current) {
 				const initialFontSize = (dividend[0] / 10).toString()

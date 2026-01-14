@@ -104,7 +104,7 @@ export const waitForVideoFrameReady = (
     const checkFrame = () => {
       // If we have a canvas, test if we can actually draw a non-empty frame
       if (canvas) {
-        const ctx = canvas.getContext('2d')
+        const ctx = canvas.getContext('2d', { willReadFrequently: true })
         if (ctx && canvas.width > 0 && canvas.height > 0) {
           // Save current canvas state
           const savedData = ctx.getImageData(0, 0, canvas.width, canvas.height)
