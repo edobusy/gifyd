@@ -589,6 +589,12 @@ function App() {
 		)
 		
 		console.log(`transcode: Target dimensions: ${widthHeight[0]}x${widthHeight[1]}, framerate: ${framerate}`)
+		
+		// Verify dimensions are even (H.264 requirement)
+		if (widthHeight[0] % 2 !== 0 || widthHeight[1] % 2 !== 0) {
+			console.error(`transcode: Dimensions are not even: ${widthHeight[0]}x${widthHeight[1]}`)
+			throw new Error(`Invalid dimensions for H.264: ${widthHeight[0]}x${widthHeight[1]} (must be even numbers)`)
+		}
 
 		try {
 			await ffmpeg.run(
@@ -600,10 +606,22 @@ function App() {
 				`${widthHeight[0]}x${widthHeight[1]}`,
 				"vid.mp4"
 			)
-			console.log("transcode: Successfully created vid.mp4")
+			console.log("transcode: FFmpeg transcoding completed")
+			
+			// Verify the output file was created
+			try {
+				const vidMp4 = ffmpeg.FS("readFile", "vid.mp4")
+				if (!vidMp4 || vidMp4.length === 0) {
+					throw new Error("vid.mp4 is empty")
+				}
+				console.log(`transcode: Successfully created vid.mp4, size: ${vidMp4.length} bytes`)
+			} catch (readError) {
+				console.error("transcode: Failed to verify vid.mp4:", readError)
+				throw new Error("FFmpeg transcoding failed - output file is invalid")
+			}
 		} catch (error) {
 			console.error("transcode: FFmpeg transcoding failed:", error)
-			throw error
+			throw new Error(`FFmpeg transcoding failed: ${error}`)
 		}
 	}
 

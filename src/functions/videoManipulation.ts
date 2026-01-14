@@ -77,8 +77,15 @@ export const takeDown = async (
   if (width > 600 || height > 600) {
     return await takeDown(width / 2, height / 2)
   }
+  
   return new Promise<number[]>((res, rej) => {
     if (!width) return rej('ERROR!!')
-    return res([width, height])
+    
+    // Ensure dimensions are even (required by H.264 encoder)
+    // Round down to nearest even number
+    const evenWidth = Math.floor(width / 2) * 2
+    const evenHeight = Math.floor(height / 2) * 2
+    
+    return res([evenWidth, evenHeight])
   })
 }
