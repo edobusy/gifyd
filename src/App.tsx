@@ -560,25 +560,50 @@ function App() {
 	}
 
 	const transcode = async (data: Uint8Array) => {
-		if (!vidRef.current) return
+		if (!vidRef.current) {
+			console.error("transcode: video ref not available")
+			throw new Error("Video ref not available")
+		}
 
 		const name = "record.webm"
-		ffmpeg.FS("writeFile", name, data)
+		
+		// Validate recording data
+		if (!data || data.length === 0) {
+			console.error("transcode: Recording data is empty")
+			throw new Error("Recording produced no data")
+		}
+		
+		console.log(`transcode: Writing ${data.length} bytes to ${name}`)
+		
+		try {
+			ffmpeg.FS("writeFile", name, data)
+		} catch (error) {
+			console.error("transcode: Failed to write file to FFmpeg FS:", error)
+			throw error
+		}
 
 		const widthHeight = await takeDown(
 			vidRef.current.videoWidth,
 			vidRef.current.videoHeight
 		)
+		
+		console.log(`transcode: Target dimensions: ${widthHeight[0]}x${widthHeight[1]}, framerate: ${framerate}`)
 
-		await ffmpeg.run(
-			"-i",
-			name,
-			"-r",
-			`${framerate}`,
-			"-s",
-			`${widthHeight[0]}x${widthHeight[1]}`,
-			"vid.mp4"
-		)
+		try {
+			await ffmpeg.run(
+				"-i",
+				name,
+				"-r",
+				`${framerate}`,
+				"-s",
+				`${widthHeight[0]}x${widthHeight[1]}`,
+				"vid.mp4"
+			)
+			console.log("transcode: Successfully created vid.mp4")
+		} catch (error) {
+			console.error("transcode: FFmpeg transcoding failed:", error)
+			throw error
+		}
 	}
 
 	function fn() {
@@ -592,47 +617,145 @@ function App() {
 			try {
 				await seekVideoToTime(vidRef.current, startTime / 1000)
 			} catch (error) {
-				console.error("Error seeking to start time:", error)
+				console.error("fn: Error seeking to start time:", error)
 				return rej(error)
 			}
 
 			let stream = canvasRef.current.captureStream()
 
+			// Detect supported codec - Firefox doesn't support VP9
+			let mimeType = "video/webm; codecs=vp9"
+			if (!MediaRecorder.isTypeSupported(mimeType)) {
+				// Fallback for Firefox - try VP8
+				mimeType = "video/webm; codecs=vp8"
+				if (!MediaRecorder.isTypeSupported(mimeType)) {
+					// Final fallback - let browser choose
+					mimeType = "video/webm"
+				}
+			}
+
+			console.log("fn: Using MediaRecorder with mimeType:", mimeType)
+
 			mediaRecorder.current = new MediaRecorder(stream, {
-				mimeType: "video/webm; codecs=vp9",
+				mimeType: mimeType,
 			})
 
+			// Track recording state
+			let recordingStarted = false
+			let recordingStopped = false
+
+			mediaRecorder.current.onstart = () => {
+				console.log("fn: MediaRecorder started")
+				recordingStarted = true
+			}
+
+			mediaRecorder.current.onerror = (event: any) => {
+				console.error("fn: MediaRecorder error:", event)
+				rej(new Error(`MediaRecorder error: ${event.error || 'Unknown error'}`))
+			}
+
 			mediaRecorder.current.start()
-			vidRef.current.play()
+			
+			try {
+				await vidRef.current.play()
+				console.log("fn: Video playback started")
+			} catch (error) {
+				console.error("fn: Failed to play video:", error)
+				return rej(error)
+			}
 
 			mediaRecorder.current.ondataavailable = function (e) {
-				recordedChunks.push(e.data)
+				if (e.data && e.data.size > 0) {
+					console.log(`fn: Received chunk of ${e.data.size} bytes`)
+					recordedChunks.push(e.data)
+				} else {
+					console.warn("fn: Received empty data chunk")
+				}
 			}
 
 			mediaRecorder.current.onstop = function (event) {
+				console.log("fn: MediaRecorder stopped")
+				recordingStopped = true
+				
+				if (recordedChunks.length === 0) {
+					console.error("fn: No data was recorded")
+					return rej(new Error("Recording produced no data chunks"))
+				}
+				
 				const blob = new Blob(recordedChunks, {
 					type: "video/webm",
 				})
+				
+				console.log(`fn: Created blob of ${blob.size} bytes from ${recordedChunks.length} chunks`)
+				
+				if (blob.size === 0) {
+					console.error("fn: Blob is empty despite having chunks")
+					return rej(new Error("Recording blob is empty"))
+				}
+				
 				var url = URL.createObjectURL(blob)
 				res({ url, blob })
 			}
 
 			let frameController = startDrawingFrames(ctx, vidRef, drawFrame)
 			setShowFrame(frameController)
+			
+			// Safety timeout for mobile devices - if recording doesn't complete naturally
+			const safetyTimeout = setTimeout(() => {
+				if (!recordingStopped) {
+					console.warn("fn: Recording exceeded safety timeout, stopping manually")
+					if (frameController) {
+						frameController.stop()
+					}
+					if (mediaRecorder.current && mediaRecorder.current.state === "recording") {
+						mediaRecorder.current.stop()
+					}
+				}
+			}, duration + 5000) // Duration + 5 seconds safety margin
+			
+			// Clear timeout when recording completes
+			const originalOnStop = mediaRecorder.current.onstop
+			mediaRecorder.current.onstop = function(event) {
+				clearTimeout(safetyTimeout)
+				if (originalOnStop) {
+					originalOnStop.call(this, event)
+				}
+			}
 		})
 	}
 
 	const createVid = async () => {
-		const result = await fn()
-		if (!result) return
-
-		const resolvedVid = await result.blob.arrayBuffer()
-		await transcode(new Uint8Array(resolvedVid))
+		console.log("createVid: Starting video creation")
+		
+		try {
+			const result = await fn()
+			
+			if (!result) {
+				console.error("createVid: fn() returned null")
+				throw new Error("Recording failed to produce result")
+			}
+			
+			console.log("createVid: Recording complete, converting to ArrayBuffer")
+			const resolvedVid = await result.blob.arrayBuffer()
+			console.log(`createVid: ArrayBuffer size: ${resolvedVid.byteLength} bytes`)
+			
+			if (resolvedVid.byteLength === 0) {
+				throw new Error("Recording ArrayBuffer is empty")
+			}
+			
+			await transcode(new Uint8Array(resolvedVid))
+			console.log("createVid: Transcoding complete")
+		} catch (error) {
+			console.error("createVid: Failed:", error)
+			throw error
+		}
 	}
 
 	const makeGif = async () => {
 		if (!vidRef.current) return
 		if (!isLoaded) return
+
+		console.log("makeGif: Starting GIF creation process")
 
 		setIsFocused([false, false, false])
 		setDisablePlayPause(true)
@@ -648,7 +771,7 @@ function App() {
 		try {
 			await pauseVideo(vidRef.current)
 		} catch (error) {
-			console.error("Error pausing video before GIF creation:", error)
+			console.error("makeGif: Error pausing video:", error)
 		}
 
 		// Now it's safe to set the start position
@@ -662,41 +785,75 @@ function App() {
 
 		const content = textOptions.content.replace(":", "\\:")
 
-		await createVid()
+		try {
+			// Create the video recording
+			await createVid()
+			console.log("makeGif: Video creation complete, adding text overlay")
 
-		let fontData = await fetchFile(times)
-		ffmpeg.FS("writeFile", "times.ttf", fontData)
-		fontData = await fetchFile(comic)
-		ffmpeg.FS("writeFile", "comic.ttf", fontData)
-		fontData = await fetchFile(impact)
-		ffmpeg.FS("writeFile", "impact.ttf", fontData)
+			// Load fonts
+			let fontData = await fetchFile(times)
+			ffmpeg.FS("writeFile", "times.ttf", fontData)
+			fontData = await fetchFile(comic)
+			ffmpeg.FS("writeFile", "comic.ttf", fontData)
+			fontData = await fetchFile(impact)
+			ffmpeg.FS("writeFile", "impact.ttf", fontData)
+			console.log("makeGif: Fonts loaded")
 
-		await ffmpeg.run(
-			"-i",
-			"vid.mp4",
-			"-vf",
-			`drawtext=fontfile=${
-				textOptions.font === "cursive" ? "comic" : textOptions.font
-			}.ttf:text='${content}':fontcolor=${textOptions.textColour}:fontsize=${
-				textOptions.fontSize
-			}:box=1:boxcolor=${textOptions.boxColour}@${
-				textOptions.boxTransparency
-			}:boxborderw=${textOptions.boxBorderWidth}:x=${textOptions.x}:y=${
-				textOptions.y
-			}`,
-			"-f",
-			"gif",
-			"out.gif"
-		)
+			// Apply text overlay and create GIF
+			console.log("makeGif: Running FFmpeg to create GIF with text overlay")
+			await ffmpeg.run(
+				"-i",
+				"vid.mp4",
+				"-vf",
+				`drawtext=fontfile=${
+					textOptions.font === "cursive" ? "comic" : textOptions.font
+				}.ttf:text='${content}':fontcolor=${textOptions.textColour}:fontsize=${
+					textOptions.fontSize
+				}:box=1:boxcolor=${textOptions.boxColour}@${
+					textOptions.boxTransparency
+				}:boxborderw=${textOptions.boxBorderWidth}:x=${textOptions.x}:y=${
+					textOptions.y
+				}`,
+				"-f",
+				"gif",
+				"out.gif"
+			)
+			console.log("makeGif: GIF creation with text overlay complete")
 
-		const output = ffmpeg.FS("readFile", "out.gif")
-		const newGifUrl = URL.createObjectURL(
-			new Blob([output.buffer as BlobPart], { type: "image/gif" })
-		)
-		setGifUrl(newGifUrl)
-
-		mediaRecorder.current = null
-		setDisablePlayPause(false)
+			const output = ffmpeg.FS("readFile", "out.gif")
+			console.log(`makeGif: Read GIF file, size: ${output.length} bytes`)
+			
+			if (!output || output.length === 0) {
+				throw new Error("GIF file is empty")
+			}
+			
+			const newGifUrl = URL.createObjectURL(
+				new Blob([output.buffer as BlobPart], { type: "image/gif" })
+			)
+			setGifUrl(newGifUrl)
+			console.log("makeGif: Success! GIF created and displayed")
+		} catch (error) {
+			console.error("makeGif: Failed to create GIF:", error)
+			
+			// Show user-friendly error message
+			let errorMessage = "Failed to create GIF. "
+			if (error instanceof Error) {
+				if (error.message.includes("Recording")) {
+					errorMessage += "The video recording failed. This may happen on some mobile devices. Try using a shorter duration or lower framerate."
+				} else if (error.message.includes("transcode") || error.message.includes("FFmpeg")) {
+					errorMessage += "Video processing failed. Try reducing the video quality or duration."
+				} else {
+					errorMessage += error.message
+				}
+			} else {
+				errorMessage += "Please try again or use a different device."
+			}
+			
+			alert(errorMessage)
+		} finally {
+			mediaRecorder.current = null
+			setDisablePlayPause(false)
+		}
 	}
 
 	// Event-driven: wait for actual video ready state
