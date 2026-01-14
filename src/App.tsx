@@ -584,9 +584,17 @@ function App() {
 	function fn() {
 		const recordedChunks: Blob[] = []
 
-		return new Promise<{ url: string; blob: Blob } | null>((res, rej) => {
-			if (!canvasRef.current) return rej
-			if (!vidRef.current) return rej
+		return new Promise<{ url: string; blob: Blob } | null>(async (res, rej) => {
+			if (!canvasRef.current) return rej(new Error("Canvas not available"))
+			if (!vidRef.current) return rej(new Error("Video not available"))
+
+			// Ensure video is at the correct start position before recording
+			try {
+				await seekVideoToTime(vidRef.current, startTime / 1000)
+			} catch (error) {
+				console.error("Error seeking to start time:", error)
+				return rej(error)
+			}
 
 			let stream = canvasRef.current.captureStream()
 
@@ -629,8 +637,29 @@ function App() {
 		setIsFocused([false, false, false])
 		setDisablePlayPause(true)
 		setShowSettings("")
-		vidRef.current.pause()
+
+		// CRITICAL: Properly stop any existing animation before starting GIF creation
+		if (showFrame) {
+			showFrame.stop()
+			setShowFrame(null)
+		}
+
+		// Wait for video to actually pause
+		try {
+			await pauseVideo(vidRef.current)
+		} catch (error) {
+			console.error("Error pausing video before GIF creation:", error)
+		}
+
+		// Now it's safe to set the start position
 		vidRef.current.currentTime = startTime / 1000
+
+		// Clear the old GIF URL to ensure fresh creation
+		if (gifUrl) {
+			URL.revokeObjectURL(gifUrl)
+			setGifUrl("")
+		}
+
 		const content = textOptions.content.replace(":", "\\:")
 
 		await createVid()
@@ -661,11 +690,10 @@ function App() {
 		)
 
 		const output = ffmpeg.FS("readFile", "out.gif")
-		setGifUrl(
-			URL.createObjectURL(
-				new Blob([output.buffer as BlobPart], { type: "image/gif" })
-			)
+		const newGifUrl = URL.createObjectURL(
+			new Blob([output.buffer as BlobPart], { type: "image/gif" })
 		)
+		setGifUrl(newGifUrl)
 
 		mediaRecorder.current = null
 		setDisablePlayPause(false)
