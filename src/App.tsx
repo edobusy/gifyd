@@ -641,21 +641,33 @@ function App() {
 		setDisablePlayPause(true)
 		setShowSettings("")
 
-		// CRITICAL: Properly stop any existing animation before starting GIF creation
+		// Step 1: Stop any existing animation SYNCHRONOUSLY
 		if (showFrame) {
 			showFrame.stop()
 			setShowFrame(null)
 		}
 
-		// Wait for video to actually pause
+		// Step 2: Pause the video and wait for pause event
 		try {
 			await pauseVideo(vidRef.current)
 		} catch (error) {
 			console.error("Error pausing video before GIF creation:", error)
 		}
 
-		// Now it's safe to set the start position
+		// Step 3: Seek to start position and wait for it to complete
 		vidRef.current.currentTime = startTime / 1000
+		await seekVideoToTime(vidRef.current, startTime / 1000)
+
+		// Step 4: Wait for video to decode the frame at start position
+		if (canvasRef.current) {
+			await waitForVideoFrameReady(vidRef.current, canvasRef.current)
+		}
+
+		// Step 5: Paint the start frame to canvas to ensure clean state
+		await paintCanvasAtCurrentTime()
+
+		// Step 6: Wait one more frame to ensure everything settled
+		await waitForNextFrame()
 
 		// Clear the old GIF URL to ensure fresh creation
 		if (gifUrl) {
@@ -665,6 +677,7 @@ function App() {
 
 		const content = textOptions.content.replace(":", "\\:")
 
+		// Now it's safe to start recording with clean state
 		await createVid()
 
 		let fontData = await fetchFile(times)
