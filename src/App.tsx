@@ -50,8 +50,9 @@ import {
 	pauseVideo,
 	playVideo,
 } from "./utils/videoHelpers"
+import { readFFmpegFile } from "./utils/ffmpegHelpers"
 
-const ffmpeg = createFFmpeg({ log: false })
+const ffmpeg = createFFmpeg({ log: true }) // Enable logging for mobile debugging
 
 function App() {
 	const [uploadedFile, setuploadedFile] = useState<File | null>(null)
@@ -799,29 +800,39 @@ function App() {
 			ffmpeg.FS("writeFile", "impact.ttf", fontData)
 			console.log("makeGif: Fonts loaded")
 
-			// Apply text overlay and create GIF
-			console.log("makeGif: Running FFmpeg to create GIF with text overlay")
-			await ffmpeg.run(
-				"-i",
-				"vid.mp4",
-				"-vf",
-				`drawtext=fontfile=${
-					textOptions.font === "cursive" ? "comic" : textOptions.font
-				}.ttf:text='${content}':fontcolor=${textOptions.textColour}:fontsize=${
-					textOptions.fontSize
-				}:box=1:boxcolor=${textOptions.boxColour}@${
-					textOptions.boxTransparency
-				}:boxborderw=${textOptions.boxBorderWidth}:x=${textOptions.x}:y=${
-					textOptions.y
-				}`,
-				"-f",
-				"gif",
-				"out.gif"
-			)
-			console.log("makeGif: GIF creation with text overlay complete")
+			try {
+				// Apply text overlay and create GIF
+				console.log("makeGif: Running FFmpeg to create GIF with text overlay")
+				await ffmpeg.run(
+					"-i",
+					"vid.mp4",
+					"-vf",
+					`drawtext=fontfile=${
+						textOptions.font === "cursive" ? "comic" : textOptions.font
+					}.ttf:text='${content}':fontcolor=${textOptions.textColour}:fontsize=${
+						textOptions.fontSize
+					}:box=1:boxcolor=${textOptions.boxColour}@${
+						textOptions.boxTransparency
+					}:boxborderw=${textOptions.boxBorderWidth}:x=${textOptions.x}:y=${
+						textOptions.y
+					}`,
+					"-f",
+					"gif",
+					"out.gif"
+				)
+				console.log("makeGif: FFmpeg run completed")
+			} catch (ffmpegError) {
+				console.error("makeGif: FFmpeg run failed:", ffmpegError)
+				throw new Error(`FFmpeg failed to create GIF: ${ffmpegError}`)
+			}
 
-			const output = ffmpeg.FS("readFile", "out.gif")
-			console.log(`makeGif: Read GIF file, size: ${output.length} bytes`)
+			// Read the output file with retry mechanism for mobile browser compatibility
+			const output = await readFFmpegFile(ffmpeg, "out.gif", {
+				maxRetries: 10,
+				initialDelay: 100,
+				backoffMultiplier: 1.5,
+				verbose: true,
+			})
 			
 			if (!output || output.length === 0) {
 				throw new Error("GIF file is empty")
