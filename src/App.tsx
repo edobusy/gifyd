@@ -50,9 +50,8 @@ import {
 	pauseVideo,
 	playVideo,
 } from "./utils/videoHelpers"
-import { readFFmpegFile } from "./utils/ffmpegHelpers"
 
-const ffmpeg = createFFmpeg({ log: true }) // Enable logging for mobile debugging
+const ffmpeg = createFFmpeg({ log: false })
 
 function App() {
 	const [uploadedFile, setuploadedFile] = useState<File | null>(null)
@@ -561,84 +560,33 @@ function App() {
 	}
 
 	const transcode = async (data: Uint8Array) => {
-		if (!vidRef.current) {
-			console.error("transcode: video ref not available")
-			throw new Error("Video ref not available")
-		}
+	if (!vidRef.current) return
 
-		const name = "record.webm"
-		
-		// Validate recording data
-		if (!data || data.length === 0) {
-			console.error("transcode: Recording data is empty")
-			throw new Error("Recording produced no data")
-		}
-		
-		console.log(`transcode: Writing ${data.length} bytes to ${name}`)
-		
-		try {
-			ffmpeg.FS("writeFile", name, data)
-		} catch (error) {
-			console.error("transcode: Failed to write file to FFmpeg FS:", error)
-			throw error
-		}
+	const name = "record.webm"
+	ffmpeg.FS("writeFile", name, data)
 
-		const widthHeight = await takeDown(
-			vidRef.current.videoWidth,
-			vidRef.current.videoHeight
-		)
-		
-		console.log(`transcode: Target dimensions: ${widthHeight[0]}x${widthHeight[1]}, framerate: ${framerate}`)
-		
-		// Verify dimensions are even (H.264 requirement)
-		if (widthHeight[0] % 2 !== 0 || widthHeight[1] % 2 !== 0) {
-			console.error(`transcode: Dimensions are not even: ${widthHeight[0]}x${widthHeight[1]}`)
-			throw new Error(`Invalid dimensions for H.264: ${widthHeight[0]}x${widthHeight[1]} (must be even numbers)`)
-		}
+	const widthHeight = await takeDown(
+	 vidRef.current.videoWidth,
+	 vidRef.current.videoHeight
+	)
 
-		try {
-			await ffmpeg.run(
-				"-i",
-				name,
-				"-r",
-				`${framerate}`,
-				"-s",
-				`${widthHeight[0]}x${widthHeight[1]}`,
-				"vid.mp4"
-			)
-			console.log("transcode: FFmpeg transcoding completed")
-			
-			// Verify the output file was created
-			try {
-				const vidMp4 = ffmpeg.FS("readFile", "vid.mp4")
-				if (!vidMp4 || vidMp4.length === 0) {
-					throw new Error("vid.mp4 is empty")
-				}
-				console.log(`transcode: Successfully created vid.mp4, size: ${vidMp4.length} bytes`)
-			} catch (readError) {
-				console.error("transcode: Failed to verify vid.mp4:", readError)
-				throw new Error("FFmpeg transcoding failed - output file is invalid")
-			}
-		} catch (error) {
-			console.error("transcode: FFmpeg transcoding failed:", error)
-			throw new Error(`FFmpeg transcoding failed: ${error}`)
-		}
+	await ffmpeg.run(
+	 "-i",
+	 name,
+	 "-r",
+	 `${framerate}`,
+	 "-s",
+	`${widthHeight[0]}x${widthHeight[1]}`,
+	 "vid.mp4"
+	)
 	}
 
 	function fn() {
 		const recordedChunks: Blob[] = []
 
-		return new Promise<{ url: string; blob: Blob } | null>(async (res, rej) => {
-			if (!canvasRef.current) return rej(new Error("Canvas not available"))
-			if (!vidRef.current) return rej(new Error("Video not available"))
-
-			// Ensure video is at the correct start position before recording
-			try {
-				await seekVideoToTime(vidRef.current, startTime / 1000)
-			} catch (error) {
-				console.error("fn: Error seeking to start time:", error)
-				return rej(error)
-			}
+		return new Promise<{ url: string; blob: Blob } | null>((res, rej) => {
+			if (!canvasRef.current) return rej
+			if (!vidRef.current) return rej
 
 			let stream = canvasRef.current.captureStream()
 
@@ -653,128 +601,41 @@ function App() {
 				}
 			}
 
-			console.log("fn: Using MediaRecorder with mimeType:", mimeType)
-
 			mediaRecorder.current = new MediaRecorder(stream, {
 				mimeType: mimeType,
 			})
 
-			// Track recording state
-			let recordingStarted = false
-			let recordingStopped = false
-
-			mediaRecorder.current.onstart = () => {
-				console.log("fn: MediaRecorder started")
-				recordingStarted = true
-			}
-
-			mediaRecorder.current.onerror = (event: any) => {
-				console.error("fn: MediaRecorder error:", event)
-				rej(new Error(`MediaRecorder error: ${event.error || 'Unknown error'}`))
-			}
-
 			mediaRecorder.current.start()
-			
-			try {
-				await vidRef.current.play()
-				console.log("fn: Video playback started")
-			} catch (error) {
-				console.error("fn: Failed to play video:", error)
-				return rej(error)
-			}
+			vidRef.current.play()
 
 			mediaRecorder.current.ondataavailable = function (e) {
-				if (e.data && e.data.size > 0) {
-					console.log(`fn: Received chunk of ${e.data.size} bytes`)
-					recordedChunks.push(e.data)
-				} else {
-					console.warn("fn: Received empty data chunk")
-				}
+				recordedChunks.push(e.data)
 			}
 
 			mediaRecorder.current.onstop = function (event) {
-				console.log("fn: MediaRecorder stopped")
-				recordingStopped = true
-				
-				if (recordedChunks.length === 0) {
-					console.error("fn: No data was recorded")
-					return rej(new Error("Recording produced no data chunks"))
-				}
-				
 				const blob = new Blob(recordedChunks, {
 					type: "video/webm",
 				})
-				
-				console.log(`fn: Created blob of ${blob.size} bytes from ${recordedChunks.length} chunks`)
-				
-				if (blob.size === 0) {
-					console.error("fn: Blob is empty despite having chunks")
-					return rej(new Error("Recording blob is empty"))
-				}
-				
 				var url = URL.createObjectURL(blob)
 				res({ url, blob })
 			}
 
 			let frameController = startDrawingFrames(ctx, vidRef, drawFrame)
 			setShowFrame(frameController)
-			
-			// Safety timeout for mobile devices - if recording doesn't complete naturally
-			const safetyTimeout = setTimeout(() => {
-				if (!recordingStopped) {
-					console.warn("fn: Recording exceeded safety timeout, stopping manually")
-					if (frameController) {
-						frameController.stop()
-					}
-					if (mediaRecorder.current && mediaRecorder.current.state === "recording") {
-						mediaRecorder.current.stop()
-					}
-				}
-			}, duration + 5000) // Duration + 5 seconds safety margin
-			
-			// Clear timeout when recording completes
-			const originalOnStop = mediaRecorder.current.onstop
-			mediaRecorder.current.onstop = function(event) {
-				clearTimeout(safetyTimeout)
-				if (originalOnStop) {
-					originalOnStop.call(this, event)
-				}
-			}
 		})
 	}
 
 	const createVid = async () => {
-		console.log("createVid: Starting video creation")
-		
-		try {
-			const result = await fn()
-			
-			if (!result) {
-				console.error("createVid: fn() returned null")
-				throw new Error("Recording failed to produce result")
-			}
-			
-			console.log("createVid: Recording complete, converting to ArrayBuffer")
-			const resolvedVid = await result.blob.arrayBuffer()
-			console.log(`createVid: ArrayBuffer size: ${resolvedVid.byteLength} bytes`)
-			
-			if (resolvedVid.byteLength === 0) {
-				throw new Error("Recording ArrayBuffer is empty")
-			}
-			
-			await transcode(new Uint8Array(resolvedVid))
-			console.log("createVid: Transcoding complete")
-		} catch (error) {
-			console.error("createVid: Failed:", error)
-			throw error
-		}
+		const result = await fn()
+		if (!result) return
+
+		const resolvedVid = await result.blob.arrayBuffer()
+		await transcode(new Uint8Array(resolvedVid))
 	}
 
 	const makeGif = async () => {
 		if (!vidRef.current) return
 		if (!isLoaded) return
-
-		console.log("makeGif: Starting GIF creation process")
 
 		setIsFocused([false, false, false])
 		setDisablePlayPause(true)
@@ -790,7 +651,7 @@ function App() {
 		try {
 			await pauseVideo(vidRef.current)
 		} catch (error) {
-			console.error("makeGif: Error pausing video:", error)
+			console.error("Error pausing video before GIF creation:", error)
 		}
 
 		// Now it's safe to set the start position
@@ -804,85 +665,41 @@ function App() {
 
 		const content = textOptions.content.replace(":", "\\:")
 
-		try {
-			// Create the video recording
-			await createVid()
-			console.log("makeGif: Video creation complete, adding text overlay")
+		await createVid()
 
-			// Load fonts
-			let fontData = await fetchFile(times)
-			ffmpeg.FS("writeFile", "times.ttf", fontData)
-			fontData = await fetchFile(comic)
-			ffmpeg.FS("writeFile", "comic.ttf", fontData)
-			fontData = await fetchFile(impact)
-			ffmpeg.FS("writeFile", "impact.ttf", fontData)
-			console.log("makeGif: Fonts loaded")
+		let fontData = await fetchFile(times)
+		ffmpeg.FS("writeFile", "times.ttf", fontData)
+		fontData = await fetchFile(comic)
+		ffmpeg.FS("writeFile", "comic.ttf", fontData)
+		fontData = await fetchFile(impact)
+		ffmpeg.FS("writeFile", "impact.ttf", fontData)
 
-			try {
-				// Apply text overlay and create GIF
-				console.log("makeGif: Running FFmpeg to create GIF with text overlay")
-				await ffmpeg.run(
-					"-i",
-					"vid.mp4",
-					"-vf",
-					`drawtext=fontfile=${
-						textOptions.font === "cursive" ? "comic" : textOptions.font
-					}.ttf:text='${content}':fontcolor=${textOptions.textColour}:fontsize=${
-						textOptions.fontSize
-					}:box=1:boxcolor=${textOptions.boxColour}@${
-						textOptions.boxTransparency
-					}:boxborderw=${textOptions.boxBorderWidth}:x=${textOptions.x}:y=${
-						textOptions.y
-					}`,
-					"-f",
-					"gif",
-					"out.gif"
-				)
-				console.log("makeGif: FFmpeg run completed")
-			} catch (ffmpegError) {
-				console.error("makeGif: FFmpeg run failed:", ffmpegError)
-				throw new Error(`FFmpeg failed to create GIF: ${ffmpegError}`)
-			}
+		await ffmpeg.run(
+			"-i",
+			"vid.mp4",
+			"-vf",
+			`drawtext=fontfile=${
+				textOptions.font === "cursive" ? "comic" : textOptions.font
+			}.ttf:text='${content}':fontcolor=${textOptions.textColour}:fontsize=${
+				textOptions.fontSize
+			}:box=1:boxcolor=${textOptions.boxColour}@${
+				textOptions.boxTransparency
+			}:boxborderw=${textOptions.boxBorderWidth}:x=${textOptions.x}:y=${
+				textOptions.y
+			}`,
+			"-f",
+			"gif",
+			"out.gif"
+		)
 
-			// Read the output file with retry mechanism for mobile browser compatibility
-			const output = await readFFmpegFile(ffmpeg, "out.gif", {
-				maxRetries: 10,
-				initialDelay: 100,
-				backoffMultiplier: 1.5,
-				verbose: true,
-			})
-			
-			if (!output || output.length === 0) {
-				throw new Error("GIF file is empty")
-			}
-			
-			const newGifUrl = URL.createObjectURL(
-				new Blob([output.buffer as BlobPart], { type: "image/gif" })
-			)
-			setGifUrl(newGifUrl)
-			console.log("makeGif: Success! GIF created and displayed")
-		} catch (error) {
-			console.error("makeGif: Failed to create GIF:", error)
-			
-			// Show user-friendly error message
-			let errorMessage = "Failed to create GIF. "
-			if (error instanceof Error) {
-				if (error.message.includes("Recording")) {
-					errorMessage += "The video recording failed. This may happen on some mobile devices. Try using a shorter duration or lower framerate."
-				} else if (error.message.includes("transcode") || error.message.includes("FFmpeg")) {
-					errorMessage += "Video processing failed. Try reducing the video quality or duration."
-				} else {
-					errorMessage += error.message
-				}
-			} else {
-				errorMessage += "Please try again or use a different device."
-			}
-			
-			alert(errorMessage)
-		} finally {
-			mediaRecorder.current = null
-			setDisablePlayPause(false)
-		}
+		const output = ffmpeg.FS("readFile", "out.gif")
+		const newGifUrl = URL.createObjectURL(
+			new Blob([output.buffer as BlobPart], { type: "image/gif" })
+		)
+		setGifUrl(newGifUrl)
+
+		mediaRecorder.current = null
+		setDisablePlayPause(false)
 	}
 
 	// Event-driven: wait for actual video ready state
