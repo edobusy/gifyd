@@ -16,6 +16,17 @@ type Props = {
 	targetHeight?: number | null
 }
 
+// Map font names to actual font families
+const getFontFamily = (fontName: string): string => {
+	const fontMap: { [key: string]: string } = {
+		times: "Times New Roman, Times, serif",
+		impact: "Impact, Haettenschweiler, 'Arial Narrow Bold', sans-serif",
+		cursive: "Comic Sans MS, cursive",
+		comic: "Comic Sans MS, cursive",
+	}
+	return fontMap[fontName.toLowerCase()] || fontName
+}
+
 // Clamp a value between min (a) and max (b)
 const clamp = (v: number, a: number, b: number) => Math.max(a, Math.min(b, v))
 
@@ -135,7 +146,8 @@ const CaptionPreview = ({
 	const fontSizeExpr = String(textOptions.fontSize ?? "")
 	const xExpr = String(textOptions.x ?? "")
 	const yExpr = String(textOptions.y ?? "")
-	const fontFamily = String(textOptions.font ?? "sans-serif")
+	const fontName = String(textOptions.font ?? "sans-serif")
+	const fontFamily = getFontFamily(fontName)
 	const boxBorderWidth = Number(textOptions.boxBorderWidth ?? 0)
 	const boxTransparency = Number(textOptions.boxTransparency ?? 1)
 
@@ -175,7 +187,7 @@ const CaptionPreview = ({
 	}, [
 		fontSizeExpr,
 		content,
-		fontFamily,
+		fontName,
 		inferredTargetWidth,
 		inferredTargetHeight,
 		tick,

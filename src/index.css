@@ -47,6 +47,7 @@ a:hover {
 
 input[type='range'] {
   -webkit-appearance: none;
+  appearance: none;
   height: 1rem;
   background: var(--white);
   border-radius: 0.5rem;
@@ -55,8 +56,10 @@ input[type='range'] {
   box-shadow: 0.5rem 0.5rem 0px var(--shadow-colour);
 }
 
+/* WebKit/Safari/Chrome slider thumb */
 input[type='range']::-webkit-slider-thumb {
   -webkit-appearance: none;
+  appearance: none;
   height: 4rem;
   width: 4rem;
   border-radius: 50%;
@@ -65,6 +68,13 @@ input[type='range']::-webkit-slider-thumb {
   box-shadow: 1rem 1rem 0px var(--shadow-colour);
   border: 0.3rem solid;
   border-color: var(--white);
+}
+
+/* Safari needs explicit track styling */
+input[type='range']::-webkit-slider-runnable-track {
+  height: 1rem;
+  background: var(--white);
+  border-radius: 0.5rem;
 }
 
 input[type='range']::-webkit-slider-thumb:hover {
@@ -141,6 +151,7 @@ input[type='range']::-moz-range-track {
 
 input[type='radio'] {
   appearance: none;
+  -webkit-appearance: none;
   background-color: var(--white);
   margin: 0.5rem 1rem 1rem 1rem;
   font: inherit;
@@ -160,16 +171,20 @@ input[type='radio']::before {
   height: 2rem;
   border-radius: 50%;
   transform: scale(0);
+  -webkit-transform: scale(0);
   transition: 120ms transform ease-in-out;
+  -webkit-transition: 120ms -webkit-transform ease-in-out;
   box-shadow: inset 10rem 10rem var(--steel-blue);
 }
 
 input[type='radio']:checked::before {
   transform: scale(1);
+  -webkit-transform: scale(1);
 }
 
 input[type='color'] {
   -webkit-appearance: none;
+  appearance: none;
   border: none;
   width: 7rem;
   height: 5rem;
@@ -182,9 +197,16 @@ input[type='color'] {
 }
 input[type='color']::-webkit-color-swatch-wrapper {
   padding: 0;
+  border-radius: 0.5rem;
 }
 input[type='color']::-webkit-color-swatch {
   border: none;
+  border-radius: 0.5rem;
+}
+/* Safari specific color input fix */
+input[type='color']::-moz-color-swatch {
+  border: none;
+  border-radius: 0.5rem;
 }
 
 /* width */

@@ -45,6 +45,8 @@
 	height: 120vh;
 	width: 550vw;
 	transform: translateX(-1%) rotate(-45deg);
+	-webkit-transform: translateX(-1%) rotate(-45deg);
+	-ms-transform: translateX(-1%) rotate(-45deg);
 }
 
 .band {
@@ -55,11 +57,21 @@
 	width: 550vw;
 	background: url("./assets/pattern.svg");
 	transform: translateX(-25%);
+	-webkit-transform: translateX(-25%);
+	-ms-transform: translateX(-25%);
 	animation: slide 40s linear infinite;
+	-webkit-animation: slide 40s linear infinite;
 }
 
 @keyframes slide {
 	to {
+		transform: translateX(25%);
+	}
+}
+
+@-webkit-keyframes slide {
+	to {
+		-webkit-transform: translateX(25%);
 		transform: translateX(25%);
 	}
 }
