@@ -1,6 +1,6 @@
 import React from 'react'
 import { videoMenu } from '../interfaces/enums'
-import { Callback, Colour, FilterLevels } from '../interfaces/types'
+import { Callback, Colour, FilterOptionProps } from '../interfaces/types'
 import FilterButton from './Filter/FilterButton'
 
 type Props = {
@@ -9,12 +9,12 @@ type Props = {
     videoMenuVal: videoMenu
     callbackFunction: Callback
     CustomisationComponent: React.ElementType
-    optionProps: any
+    optionProps: FilterOptionProps
   }[]
-  colourSettings: string
+  colourSettings: videoMenu | null
   rgbaMod: Colour
   setRgbaMod: React.Dispatch<React.SetStateAction<Colour>>
-  setColourSettings: (value: React.SetStateAction<string>) => void
+  setColourSettings: React.Dispatch<React.SetStateAction<videoMenu | null>>
   setCallback: (value: React.SetStateAction<Callback>) => void
   isFilterFocused: boolean[]
   setIsFilterFocused: React.Dispatch<React.SetStateAction<boolean[]>>
@@ -55,7 +55,7 @@ const FilterOptions = (props: { filterProps: Props }) => {
         {videoMenuOptions.map(
           ({ videoMenuVal, CustomisationComponent, optionProps }) => (
             <div key={'customisationComponent' + videoMenuVal}>
-              {colourSettings.includes(videoMenuVal.toString()) && (
+              {colourSettings === videoMenuVal && (
                 <CustomisationComponent optionProps={optionProps} />
               )}
             </div>

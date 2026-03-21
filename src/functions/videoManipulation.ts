@@ -1,10 +1,8 @@
-import { Callback, Colour, FilterLevels } from '../interfaces/types'
+import { Callback, FilterOptions } from '../interfaces/types'
 
 export const rgbSplit: Callback = (
   pixels,
-  options: {
-    rgbShift: Colour
-  }
+  options: FilterOptions
 ) => {
   for (let i = 0; i < pixels.length; i += 4) {
     pixels[i + options.rgbShift.red] = pixels[i] //r
@@ -17,9 +15,7 @@ export const rgbSplit: Callback = (
 
 export const customColour: Callback = (
   pixels,
-  options: {
-    rgbaMod: Colour
-  }
+  options: FilterOptions
 ) => {
   for (let i = 0; i < pixels.length; i += 4) {
     pixels[i] = pixels[i] + options.rgbaMod.red //r
@@ -32,9 +28,7 @@ export const customColour: Callback = (
 
 export const greenScreen: Callback = (
   pixels,
-  options: {
-    levels: FilterLevels
-  }
+  options: FilterOptions
 ) => {
   for (let i = 0; i < pixels.length; i = i + 4) {
     const red = pixels[i + 0]

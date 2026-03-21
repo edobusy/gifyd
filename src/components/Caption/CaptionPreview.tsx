@@ -19,10 +19,11 @@ type Props = {
 // Map font names to actual font families
 const getFontFamily = (fontName: string): string => {
 	const fontMap: { [key: string]: string } = {
-		times: "Times New Roman, Times, serif",
-		impact: "Impact, Haettenschweiler, 'Arial Narrow Bold', sans-serif",
-		cursive: "Comic Sans MS, cursive",
-		comic: "Comic Sans MS, cursive",
+		times: "'GIF Times', 'Times New Roman', Times, serif",
+		impact:
+			"'GIF Impact', Impact, Haettenschweiler, 'Arial Narrow Bold', sans-serif",
+		cursive: "'GIF Comic', 'Comic Sans MS', cursive",
+		comic: "'GIF Comic', 'Comic Sans MS', cursive",
 	}
 	return fontMap[fontName.toLowerCase()] || fontName
 }
@@ -32,40 +33,71 @@ const clamp = (v: number, a: number, b: number) => Math.max(a, Math.min(b, v))
 
 // Safely evaluates expressions (e.g. "w / 2 - text_w / 2")
 // Variables are substituted from the provided env object
-function evalExpr(expr: string, env: { [k: string]: number }): number {
-	if (!expr) return NaN
-	try {
-		let replaced = expr
-		Object.keys(env).forEach((k) => {
-			replaced = replaced.replace(new RegExp(`\\b${k}\\b`, "g"), `(${env[k]})`)
-		})
-		// eslint-disable-next-line no-new-func
-		const f = new Function(`return (${replaced});`)
-		const res = f()
-		return typeof res === "number" && Number.isFinite(res) ? res : NaN
-	} catch {
-		return NaN
+function evalExpr(expr: string, env: Record<string, number>): number {
+	const tokens = expr.match(/(\d+\.?\d*|[a-z_]\w*|[+\-*/()])/gi)
+	if (!tokens) return NaN
+	let pos = 0
+
+	function parseExpr(tokens: RegExpMatchArray): number {
+		let left = parseTerm(tokens)
+		while (
+			pos < tokens.length &&
+			(tokens[pos] === "+" || tokens[pos] === "-")
+		) {
+			const op = tokens[pos++]
+			const right = parseTerm(tokens)
+			left = op === "+" ? left + right : left - right
+		}
+		return left
 	}
+
+	function parseTerm(tokens: RegExpMatchArray): number {
+		let left = parseFactor(tokens)
+		while (
+			pos < tokens.length &&
+			(tokens[pos] === "*" || tokens[pos] === "/")
+		) {
+			const op = tokens[pos++]
+			const right = parseFactor(tokens)
+			left = op === "*" ? left * right : left / right
+		}
+		return left
+	}
+
+	function parseFactor(tokens: RegExpMatchArray): number {
+		if (tokens[pos] === "(") {
+			pos++
+			const val = parseExpr(tokens)
+			pos++ // skip ')'
+			return val
+		}
+		const token = tokens[pos++]
+		if (token in env) return env[token]
+		const num = Number(token)
+		return Number.isFinite(num) ? num : NaN
+	}
+
+	return parseExpr(tokens)
 }
+
+const measureCanvas = document.createElement("canvas")
+const measureCtx = measureCanvas.getContext("2d")
 
 // Measures text using an offscreen canvas to get accurate width/height
 function measureText(text: string, fontSizePx: number, fontFamily: string) {
-	const canvas = document.createElement("canvas")
-	const ctx = canvas.getContext("2d")
-	if (!ctx) return { width: 0, height: 0 }
-
-	ctx.font = `${fontSizePx}px ${fontFamily}`
-	const metrics = ctx.measureText(text)
+	if (!measureCtx) return { width: 0, height: 0 }
+	measureCtx.font = `${fontSizePx}px ${fontFamily}`
+	const metrics = measureCtx.measureText(text)
 
 	const width = metrics.width || 0
-	const ascent = (metrics as any).actualBoundingBoxAscent ?? fontSizePx * 0.8
-	const descent = (metrics as any).actualBoundingBoxDescent ?? fontSizePx * 0.2
+	const ascent = metrics.actualBoundingBoxAscent ?? fontSizePx * 0.8
+	const descent = metrics.actualBoundingBoxDescent ?? fontSizePx * 0.2
 	const height = ascent + descent
 
 	return { width, height, ascent, descent }
 }
 
-const CaptionPreview = ({
+const CaptionPreview = React.memo(({
 	textOptions,
 	vidRef,
 	canvasRef,
@@ -85,11 +117,8 @@ const CaptionPreview = ({
 
 		const waitFonts = async () => {
 			try {
-				if (
-					(document as any).fonts &&
-					typeof (document as any).fonts.ready?.then === "function"
-				) {
-					await (document as any).fonts.ready
+				if (document.fonts) {
+					await document.fonts.ready
 				}
 			} finally {
 				if (!cancelled) setTick((t) => t + 1)
@@ -219,7 +248,7 @@ const CaptionPreview = ({
 	// Named positions fallback (top / center / bottom)
 	if (!Number.isFinite(yPx)) {
 		const matched = textPositions.find(
-			(p) => p.positionEquation === yExpr || p.positionName === yExpr
+			(p) => p.positionEquation === yExpr || p.positionName === yExpr,
 		)
 
 		const posName = (matched && matched.positionName) || "center"
@@ -257,7 +286,7 @@ const CaptionPreview = ({
 		boxLeftInCanvas = clamp(
 			boxLeftInCanvas,
 			0,
-			Math.max(0, displayedWidth - boxWidth)
+			Math.max(0, displayedWidth - boxWidth),
 		)
 	}
 
@@ -268,7 +297,7 @@ const CaptionPreview = ({
 		boxTopInCanvas = clamp(
 			boxTopInCanvas,
 			0,
-			Math.max(0, displayedHeight - boxHeight)
+			Math.max(0, displayedHeight - boxHeight),
 		)
 	}
 
@@ -277,7 +306,7 @@ const CaptionPreview = ({
 	const bg = rgbBox
 		? `rgba(${rgbBox.r}, ${rgbBox.g}, ${rgbBox.b}, ${
 				Number.isFinite(boxTransparency) ? boxTransparency : 1
-		  })`
+			})`
 		: textOptions.boxColour
 
 	const color = rgbText
@@ -286,6 +315,7 @@ const CaptionPreview = ({
 
 	return (
 		<div
+			aria-hidden="true"
 			style={{
 				position: "absolute",
 				width: displayedWidth,
@@ -310,7 +340,7 @@ const CaptionPreview = ({
 					justifyContent: "center",
 					padding: `${Math.max(0, displayBorderY)}px ${Math.max(
 						0,
-						displayBorderX
+						displayBorderX,
 					)}px`,
 				}}
 			>
@@ -331,6 +361,6 @@ const CaptionPreview = ({
 			</div>
 		</div>
 	)
-}
+})
 
 export default CaptionPreview

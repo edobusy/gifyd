@@ -5,10 +5,6 @@ export type Colour = {
   alpha?: number
 }
 
-export type Callback =
-  | ((pixels: Uint8ClampedArray, options: any) => Uint8ClampedArray)
-  | null
-
 export type FilterLevels = {
   rmin: number
   rmax: number
@@ -18,6 +14,16 @@ export type FilterLevels = {
   bmax: number
   background: string
 }
+
+export type FilterOptions = {
+  rgbaMod: Colour
+  rgbShift: Colour
+  levels: FilterLevels
+}
+
+export type Callback =
+  | ((pixels: Uint8ClampedArray, options: FilterOptions) => Uint8ClampedArray)
+  | null
 
 export type VideoSettings = {
   content: string
@@ -36,3 +42,17 @@ export type ColourFilter = {
   rgbaMod: Colour
   setRgbaMod: React.Dispatch<React.SetStateAction<Colour>>
 }
+
+export type RgbSplitFilter = {
+  colourNames: string[]
+  rgbShift: Colour
+  setRgbShift: React.Dispatch<React.SetStateAction<Colour>>
+}
+
+export type GreenScreenFilter = {
+  colourNames: string[]
+  levels: FilterLevels
+  setLevels: React.Dispatch<React.SetStateAction<FilterLevels>>
+}
+
+export type FilterOptionProps = ColourFilter | RgbSplitFilter | GreenScreenFilter

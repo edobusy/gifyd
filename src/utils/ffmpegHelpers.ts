@@ -1,3 +1,5 @@
+import type { FFmpeg } from "@ffmpeg/ffmpeg"
+
 /**
  * Reliably reads a file from FFmpeg's virtual filesystem with retry logic.
  * 
@@ -12,7 +14,7 @@
  * @throws Error if file cannot be read after all retries
  */
 export async function readFFmpegFile(
-	ffmpeg: any,
+	ffmpeg: FFmpeg,
 	filename: string,
 	options: {
 		maxRetries?: number
@@ -123,7 +125,7 @@ export async function readFFmpegFile(
  * @param filename - Name of the file to check
  * @returns true if file exists, false otherwise
  */
-export function ffmpegFileExists(ffmpeg: any, filename: string): boolean {
+export function ffmpegFileExists(ffmpeg: FFmpeg, filename: string): boolean {
 	try {
 		const directory = filename.includes("/")
 			? filename.substring(0, filename.lastIndexOf("/")) || "/"
@@ -148,7 +150,7 @@ export function ffmpegFileExists(ffmpeg: any, filename: string): boolean {
  * @throws Error if file doesn't appear after timeout
  */
 export async function waitForFFmpegFile(
-	ffmpeg: any,
+	ffmpeg: FFmpeg,
 	filename: string,
 	options: {
 		timeout?: number

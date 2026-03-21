@@ -1,12 +1,13 @@
-import React, { useState } from "react"
+import React from "react"
+import { settings } from "../interfaces/enums"
 import Button from "./generic/Button"
 
 type Props = {
-	showSettings: string
+	showSettings: settings | null
 	disablePlayPause: boolean
-	setting: number
+	setting: settings
 	buttonName: string
-	setShowSettings: (value: React.SetStateAction<string>) => void
+	setShowSettings: React.Dispatch<React.SetStateAction<settings | null>>
 	isFocused: boolean[]
 	setIsFocused: React.Dispatch<React.SetStateAction<boolean[]>>
 }
@@ -24,25 +25,19 @@ const MainSettingsButton = (props: { buttonProps: Props }) => {
 		setIsFocused,
 	} = props.buttonProps
 
-	const handleClick = (e: React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
-		if (showSettings && showSettings.includes(e.currentTarget.value)) {
-			const newSetting = showSettings.replace(e.currentTarget.value, "")
+	const handleClick = () => {
+		if (showSettings === setting) {
 			setIsFocused((arr) => {
-				arr[setting] = false
-				return arr
+				const next = [...arr]
+				next[setting] = false
+				return next
 			})
-			setShowSettings(newSetting)
+			setShowSettings(null)
 		} else {
 			setIsFocused((arr) => {
-				return arr.map((item, idx, arr) => {
-					if (idx == setting) {
-						return true
-					} else {
-						return false
-					}
-				})
+				return arr.map((_, idx) => idx === setting)
 			})
-			setShowSettings(e.currentTarget.value)
+			setShowSettings(setting)
 		}
 	}
 

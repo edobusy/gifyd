@@ -1,5 +1,21 @@
 @import url("https://fonts.googleapis.com/css?family=Inder:400|Inria+Sans:700");
 
+/* Load the actual fonts used in GIFs for preview */
+@font-face {
+	font-family: 'GIF Times';
+	src: url('./assets/times.ttf') format('truetype');
+}
+
+@font-face {
+	font-family: 'GIF Impact';
+	src: url('./assets/impact.ttf') format('truetype');
+}
+
+@font-face {
+	font-family: 'GIF Comic';
+	src: url('./assets/comic.ttf') format('truetype');
+}
+
 .normal-text {
 	color: var(--white);
 	font-family: var(--font-family-inder);
@@ -45,8 +61,6 @@
 	height: 120vh;
 	width: 550vw;
 	transform: translateX(-1%) rotate(-45deg);
-	-webkit-transform: translateX(-1%) rotate(-45deg);
-	-ms-transform: translateX(-1%) rotate(-45deg);
 }
 
 .band {
@@ -55,23 +69,15 @@
 	top: 0px;
 	height: 120vh;
 	width: 550vw;
-	background: url("./assets/pattern.svg");
+	background-image: url("./assets/pattern.svg");
+	background-size: 15px 15px;
+	background-repeat: repeat;
 	transform: translateX(-25%);
-	-webkit-transform: translateX(-25%);
-	-ms-transform: translateX(-25%);
 	animation: slide 40s linear infinite;
-	-webkit-animation: slide 40s linear infinite;
 }
 
 @keyframes slide {
 	to {
-		transform: translateX(25%);
-	}
-}
-
-@-webkit-keyframes slide {
-	to {
-		-webkit-transform: translateX(25%);
 		transform: translateX(25%);
 	}
 }
@@ -228,13 +234,13 @@
 	}
 	.rightSide {
 		margin: auto;
-		min-width: 100vw !important;
-		height: 0vh !important;
+		min-width: 100% !important;
+		height: auto !important;
 		/* margin-top: 40rem; */
 	}
 	.leftSide {
 		margin: 17vh auto 10vh auto;
-		width: 100vw !important;
+		width: 100% !important;
 	}
 
 	.editOptions {
@@ -641,4 +647,12 @@
 
 .greenScreenColour {
 	margin: 2rem;
+}
+
+.errorMessage {
+	color: #c62828;
+	font-family: var(--font-family-inder);
+	font-size: var(--font-size-s);
+	text-align: center;
+	padding: 1rem 2rem;
 }

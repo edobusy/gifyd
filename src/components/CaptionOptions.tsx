@@ -33,7 +33,7 @@ type Props = {
 // textSize should be small, medium, large AND 20, 15, 10
 // textFonts should be Times New Roman, Impact, Comic Sans AND times, impact, cursive
 // targetContentColourInputs should be text, box, false, true
-const CaptionOptions = (props: { captionOptions: Props }) => {
+const CaptionOptions = React.memo((props: Props) => {
 	const {
 		textPositions,
 		textSizes,
@@ -43,7 +43,7 @@ const CaptionOptions = (props: { captionOptions: Props }) => {
 		setTextOptions,
 		vidRef,
 		fontSizeRef,
-	} = props.captionOptions
+	} = props
 
 	return (
 		<div className="extraSettings">
@@ -140,13 +140,13 @@ const CaptionOptions = (props: { captionOptions: Props }) => {
 										setTextOptions,
 									}}
 								/>
-							)
+							),
 						)}
 					</div>
 				</div>
 			</div>
 		</div>
 	)
-}
+})
 
 export default CaptionOptions

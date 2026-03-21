@@ -16,7 +16,7 @@ const GifResult = (props: { gifProps: Props }) => {
 	return (
 		<div className="modalBackground">
 			<div className="modalContainer">
-				<img ref={gifRef} src={gifUrl} className="finalGif" />
+				<img ref={gifRef} src={gifUrl} className="finalGif" alt="Generated GIF preview" />
 				<div className="dualColGif">
 					<div className="container shiftLeft">
 						<label htmlFor="fileName" className="simpleLabel tilt">

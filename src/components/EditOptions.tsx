@@ -13,7 +13,7 @@ type Props = {
   setDuration: (value: React.SetStateAction<number>) => void
 }
 
-const EditOptions = (props: { editProps: Props }) => {
+const EditOptions = React.memo((props: Props) => {
   const {
     minimumDuration,
     maxDuration,
@@ -25,7 +25,7 @@ const EditOptions = (props: { editProps: Props }) => {
     startTime,
     setStartTime,
     setDuration,
-  } = props.editProps
+  } = props
 
   return (
     <div className='editOptions'>
@@ -52,7 +52,7 @@ const EditOptions = (props: { editProps: Props }) => {
           <p className='simpleLabel tilt tiny'>{startTime / 1000}s</p>
         </div>
         <div className='editSubOptions'>
-          <label htmlFor='start' className='simpleLabel tilt'>
+          <label htmlFor='framerate' className='simpleLabel tilt'>
             Framerate:
           </label>
           <input
@@ -69,7 +69,7 @@ const EditOptions = (props: { editProps: Props }) => {
           <p className='simpleLabel tilt tiny'>{framerate} fps</p>
         </div>
         <div className='editSubOptions'>
-          <label htmlFor='start' className='simpleLabel tilt'>
+          <label htmlFor='duration' className='simpleLabel tilt'>
             GIF Length:
           </label>
           <input
@@ -89,6 +89,6 @@ const EditOptions = (props: { editProps: Props }) => {
       </div>
     </div>
   )
-}
+})
 
 export default EditOptions

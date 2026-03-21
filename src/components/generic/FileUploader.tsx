@@ -22,6 +22,7 @@ const FileUploader = (props: { fileUploaderProps: Props }) => {
         ref={hiddenFileInput}
         style={{ display: 'none' }}
         type='file'
+        accept='video/mp4'
         id='fileUploaderInput'
         name='fileUploaderInput'
         onChange={fileUploadFunc}

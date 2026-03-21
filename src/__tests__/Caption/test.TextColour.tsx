@@ -1,15 +1,10 @@
-import React, { ChangeEvent, SetStateAction, useState } from 'react'
-import ReactDOM from 'react-dom'
+import React, { useState } from 'react'
 import {
   render,
   screen,
   fireEvent,
   cleanup,
-  getNodeText,
-  waitFor,
 } from '@testing-library/react'
-import FileUploader from '../../components/generic/FileUploader'
-import userEvent from '@testing-library/user-event'
 import '@testing-library/jest-dom'
 import TextColour from '../../components/Caption/TextColour'
 import { VideoSettings } from '../../interfaces/types'

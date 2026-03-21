@@ -1,6 +1,7 @@
 /* Full App.tsx with event-driven improvements - no hardcoded timeouts */
 import React, {
 	ChangeEvent,
+	useCallback,
 	useEffect,
 	useLayoutEffect,
 	useRef,
@@ -50,16 +51,19 @@ import {
 	pauseVideo,
 	playVideo,
 } from "./utils/videoHelpers"
+import { readFFmpegFile } from "./utils/ffmpegHelpers"
 
 const ffmpeg = createFFmpeg({ log: false })
 
 function App() {
-	const [uploadedFile, setuploadedFile] = useState<File | null>(null)
-	const [vidUrl, setvidUrl] = useState("")
+	const [uploadedFile, setUploadedFile] = useState<File | null>(null)
+	const [vidUrl, setVidUrl] = useState("")
 	const [gifUrl, setGifUrl] = useState("")
 	const vidRef = useRef<HTMLVideoElement>(null)
 	const gifRef = useRef<HTMLImageElement>(null)
 	const [isLoaded, setIsLoaded] = useState(false)
+	const [ffmpegError, setFfmpegError] = useState<string | null>(null)
+	const [uploadError, setUploadError] = useState<string | null>(null)
 
 	const [startTime, setStartTime] = useState(0)
 	const [framerate, setFramerate] = useState(15)
@@ -68,10 +72,10 @@ function App() {
 	const [maxDuration, setMaxDuration] = useState(0)
 	const [videoLength, setVideoLength] = useState(0)
 
-	const [showSettings, setShowSettings] = useState("")
-	const [colourSettings, setColourSettings] = useState("")
+	const [showSettings, setShowSettings] = useState<settings | null>(null)
+	const [colourSettings, setColourSettings] = useState<videoMenu | null>(null)
 
-	const canvasRef = useRef<HTMLCanvasElement>(null)
+	const canvasRef = useRef<HTMLCanvasElement | null>(null)
 	const [ctx, setCtx] = useState<CanvasRenderingContext2D | null>(null)
 	const [showFrame, setShowFrame] = useState<{ stop: () => void } | null>(null)
 
@@ -191,12 +195,11 @@ function App() {
 	}, [])
 
 	useEffect(() => {
-		const fileURL = ""
+		if (!uploadedFile) return
 
-		if (uploadedFile) {
-			const fileURL = URL.createObjectURL(uploadedFile)
-			setvidUrl(fileURL)
-		}
+		const fileURL = URL.createObjectURL(uploadedFile)
+		setVidUrl(fileURL)
+
 		return () => {
 			if (fileURL) {
 				URL.revokeObjectURL(fileURL)
@@ -205,11 +208,17 @@ function App() {
 	}, [uploadedFile])
 
 	useEffect(() => {
+		return () => {
+			if (gifUrl) URL.revokeObjectURL(gifUrl)
+		}
+	}, [gifUrl])
+
+	useEffect(() => {
 		if (vidRef.current) {
 			setMaxDuration(
 				videoLength + minimumDuration - startTime > 4000
 					? 4000
-					: videoLength + minimumDuration - startTime
+					: videoLength + minimumDuration - startTime,
 			)
 		}
 	}, [startTime])
@@ -241,11 +250,12 @@ function App() {
 		repaintAtNewStartTime()
 	}, [startTime, videoIsReady, ctx, gifUrl])
 
-	useEffect(() => {
-		if (canvasRef.current) {
-			setCtx(canvasRef.current.getContext("2d", { willReadFrequently: true }))
+	const canvasCallbackRef = useCallback((node: HTMLCanvasElement | null) => {
+		if (node) {
+			canvasRef.current = node
+			setCtx(node.getContext("2d", { willReadFrequently: true }))
 		}
-	}, [canvasRef.current])
+	}, [])
 
 	// Paint initial frame when both video and canvas are ready
 	useEffect(() => {
@@ -288,7 +298,7 @@ function App() {
 						"Video has invalid dimensions:",
 						video.clientWidth,
 						"x",
-						video.clientHeight
+						video.clientHeight,
 					)
 				}
 			} catch (error) {
@@ -348,8 +358,20 @@ function App() {
 	}, [gifUrl, vidUrl, ctx, videoIsReady])
 
 	const loadFfmpeg = async () => {
-		await ffmpeg.load()
-		setIsLoaded(true)
+		try {
+			if (ffmpeg.isLoaded()) {
+				setIsLoaded(true)
+				return
+			}
+			await ffmpeg.load()
+			setIsLoaded(true)
+		} catch (error) {
+			console.error("Failed to load FFmpeg:", error)
+			setFfmpegError(
+				"Failed to load video processing engine. " +
+				"Please ensure your browser supports SharedArrayBuffer and try again."
+			)
+		}
 	}
 
 	const videoUpload = async (e: ChangeEvent<HTMLInputElement>) => {
@@ -358,22 +380,24 @@ function App() {
 		}
 
 		if (e.target.files.length !== 1) {
-			alert("Please upload one file!")
+			setUploadError("Please upload one file")
 			return
 		}
 		if (e.target.files[0].type !== "video/mp4") {
-			alert("Please upload an mp4 video")
+			setUploadError("Please upload an mp4 video")
 			return
 		}
 		if (e.target.files[0].size < 20000) {
-			alert("Video is too tiny!")
+			setUploadError("Video is too tiny!")
 			return
 		}
-		if (e.target.files[0].size > 358406553600) {
-			alert("Video is too big!")
+		const MAX_FILE_SIZE = 500 * 1024 * 1024 // 500 MB
+		if (e.target.files[0].size > MAX_FILE_SIZE) {
+			setUploadError("Video is too big! Maximum size is 500 MB.")
 			return
 		}
-		setuploadedFile(e.target.files[0])
+		setUploadError(null)
+		setUploadedFile(e.target.files[0])
 	}
 
 	// Event-driven: wait for actual events, not arbitrary timeouts
@@ -415,8 +439,13 @@ function App() {
 
 			// Check if we actually drew something
 			const hasNonZeroPixels = dataBuffer.some(
-				(val, idx) => idx % 4 !== 3 && val !== 0
+				(val, idx) => idx % 4 !== 3 && val !== 0,
 			)
+
+			if (!hasNonZeroPixels) {
+				console.warn("Blank frame detected, skipping draw")
+				return
+			}
 
 			drawFrame(ctx, dataBuffer, width, height)
 		} catch (error) {
@@ -431,9 +460,9 @@ function App() {
 			ctx: CanvasRenderingContext2D,
 			data: Uint8ClampedArray,
 			width: number,
-			height: number
+			height: number,
 		) => void,
-		oneIteration: boolean = false
+		oneIteration: boolean = false,
 	): { stop: () => void } {
 		let stopped = false
 		let callbackId: number | null = null
@@ -450,12 +479,9 @@ function App() {
 				// Only draw if enough time has passed for the target framerate
 				if (elapsed < frameInterval) {
 					// Not enough time passed, schedule next check
-					if (
-						vidRef.current &&
-						"requestVideoFrameCallback" in vidRef.current
-					) {
-						callbackId = (vidRef.current as any).requestVideoFrameCallback(
-							processFrame
+					if (vidRef.current && "requestVideoFrameCallback" in vidRef.current) {
+						callbackId = vidRef.current.requestVideoFrameCallback(
+							processFrame,
 						)
 					}
 					return
@@ -483,7 +509,7 @@ function App() {
 			ctx.drawImage(vidRef.current, 0, 0, width, height)
 
 			const dataBuffer = new Uint8ClampedArray(
-				ctx.getImageData(0, 0, width, height).data.buffer
+				ctx.getImageData(0, 0, width, height).data.buffer,
 			)
 
 			// Apply filters FIRST
@@ -501,8 +527,8 @@ function App() {
 				vidRef.current &&
 				"requestVideoFrameCallback" in vidRef.current
 			) {
-				callbackId = (vidRef.current as any).requestVideoFrameCallback(
-					processFrame
+				callbackId = vidRef.current.requestVideoFrameCallback(
+					processFrame,
 				)
 			}
 		}
@@ -526,8 +552,8 @@ function App() {
 		if (vidRef.current && "requestVideoFrameCallback" in vidRef.current) {
 			// Initialize with current timestamp
 			lastFrameTime = performance.now()
-			callbackId = (vidRef.current as any).requestVideoFrameCallback(
-				processFrame
+			callbackId = vidRef.current.requestVideoFrameCallback(
+				processFrame,
 			)
 		} else {
 			console.warn("requestVideoFrameCallback not supported, using fallback")
@@ -553,40 +579,40 @@ function App() {
 					vidRef.current &&
 					"cancelVideoFrameCallback" in vidRef.current
 				) {
-					;(vidRef.current as any).cancelVideoFrameCallback(callbackId)
+					vidRef.current.cancelVideoFrameCallback(callbackId)
 				}
 			},
 		}
 	}
 
 	const transcode = async (data: Uint8Array) => {
-	if (!vidRef.current) return
+		if (!vidRef.current) return
 
-	const name = "record.webm"
-	ffmpeg.FS("writeFile", name, data)
+		const name = "record.webm"
+		ffmpeg.FS("writeFile", name, data)
 
-	const widthHeight = await takeDown(
-	 vidRef.current.videoWidth,
-	 vidRef.current.videoHeight
-	)
+		const widthHeight = await takeDown(
+			vidRef.current.videoWidth,
+			vidRef.current.videoHeight,
+		)
 
-	await ffmpeg.run(
-	 "-i",
-	 name,
-	 "-r",
-	 `${framerate}`,
-	 "-s",
-	`${widthHeight[0]}x${widthHeight[1]}`,
-	 "vid.mp4"
-	)
+		await ffmpeg.run(
+			"-i",
+			name,
+			"-r",
+			`${framerate}`,
+			"-s",
+			`${widthHeight[0]}x${widthHeight[1]}`,
+			"vid.mp4",
+		)
 	}
 
 	function fn() {
 		const recordedChunks: Blob[] = []
 
 		return new Promise<{ url: string; blob: Blob } | null>((res, rej) => {
-			if (!canvasRef.current) return rej
-			if (!vidRef.current) return rej
+			if (!canvasRef.current) return rej(new Error("Canvas ref not available"))
+			if (!vidRef.current) return rej(new Error("Video ref not available"))
 
 			let stream = canvasRef.current.captureStream()
 
@@ -616,7 +642,7 @@ function App() {
 				const blob = new Blob(recordedChunks, {
 					type: "video/webm",
 				})
-				var url = URL.createObjectURL(blob)
+				const url = URL.createObjectURL(blob)
 				res({ url, blob })
 			}
 
@@ -639,7 +665,7 @@ function App() {
 
 		setIsFocused([false, false, false])
 		setDisablePlayPause(true)
-		setShowSettings("")
+		setShowSettings(null)
 
 		// Step 1: Stop any existing animation SYNCHRONOUSLY
 		if (showFrame) {
@@ -675,7 +701,16 @@ function App() {
 			setGifUrl("")
 		}
 
-		const content = textOptions.content.replace(":", "\\:")
+		const escapeForFFmpeg = (text: string): string => {
+			return text
+				.replace(/\\/g, "\\\\")
+				.replace(/'/g, "\\'")
+				.replace(/:/g, "\\:")
+				.replace(/%/g, "%%")
+				.replace(/;/g, "\\;")
+		}
+
+		const content = escapeForFFmpeg(textOptions.content)
 
 		// Now it's safe to start recording with clean state
 		await createVid()
@@ -702,12 +737,12 @@ function App() {
 			}`,
 			"-f",
 			"gif",
-			"out.gif"
+			"out.gif",
 		)
 
-		const output = ffmpeg.FS("readFile", "out.gif")
+		const output = await readFFmpegFile(ffmpeg, "out.gif")
 		const newGifUrl = URL.createObjectURL(
-			new Blob([output.buffer as BlobPart], { type: "image/gif" })
+			new Blob([output.buffer], { type: "image/gif" }),
 		)
 		setGifUrl(newGifUrl)
 
@@ -734,7 +769,7 @@ function App() {
 
 			setVideoLength(video.duration * 1000 - minimumDuration)
 			setMaxDuration(
-				video.duration * 1000 > 4000 ? 4000 : video.duration * 1000
+				video.duration * 1000 > 4000 ? 4000 : video.duration * 1000,
 			)
 			// Only reset duration if it's still at the default minimum
 			// This preserves user's duration choice when returning from GIF result
@@ -780,7 +815,7 @@ function App() {
 		ctx: CanvasRenderingContext2D,
 		dataBuffer: Uint8ClampedArray,
 		width: number,
-		height: number
+		height: number,
 	) => {
 		const processed =
 			callback?.(dataBuffer, { rgbaMod, rgbShift, levels }) ?? dataBuffer
@@ -788,7 +823,7 @@ function App() {
 		ctx.putImageData(
 			new ImageData(new Uint8ClampedArray(processed), width, height),
 			0,
-			0
+			0,
 		)
 	}
 
@@ -844,7 +879,7 @@ function App() {
 					if (width > 0 && height > 0) {
 						ctx.drawImage(video, 0, 0, width, height)
 						const dataBuffer = new Uint8ClampedArray(
-							ctx.getImageData(0, 0, width, height).data.buffer
+							ctx.getImageData(0, 0, width, height).data.buffer,
 						)
 						drawFrame(ctx, dataBuffer, width, height)
 					}
@@ -855,9 +890,9 @@ function App() {
 		}
 	}
 
-	const handlePlayPause = () => {
+	const handlePlayPause = async () => {
 		if (!vidRef.current) return
-		checkIfOver()
+		await checkIfOver()
 		if (vidRef.current.paused) {
 			vidRef.current.play()
 		} else {
@@ -869,7 +904,7 @@ function App() {
 		{
 			buttonName: "Colour Filter",
 			videoMenuVal: videoMenu.Colour,
-			callbackFunction: customColour as Callback,
+			callbackFunction: customColour,
 			CustomisationComponent: ColourFilterOptions as React.ElementType,
 			optionProps: {
 				colourNames: ["red", "green", "blue"],
@@ -880,7 +915,7 @@ function App() {
 		{
 			buttonName: "RGB Split",
 			videoMenuVal: videoMenu.RgbSplit,
-			callbackFunction: rgbSplit as Callback,
+			callbackFunction: rgbSplit,
 			CustomisationComponent: RgbSplitOptions as React.ElementType,
 			optionProps: {
 				colourNames: ["red", "green", "blue"],
@@ -891,7 +926,7 @@ function App() {
 		{
 			buttonName: "Green Screen",
 			videoMenuVal: videoMenu.GreenScreen,
-			callbackFunction: greenScreen as Callback,
+			callbackFunction: greenScreen,
 			CustomisationComponent: GreenScreenOptions as React.ElementType,
 			optionProps: {
 				colourNames: ["red", "green", "blue"],
@@ -908,19 +943,28 @@ function App() {
 					window.location.reload()
 				}}
 				className="appNameLogo"
+				aria-label="GIFYD - Return to home"
 			>
 				GIFYD
 			</button>
 			<div className="bandContainer">
 				<div className="band"></div>
 			</div>
+			{ffmpegError && (
+				<p className="errorMessage" role="alert">{ffmpegError}</p>
+			)}
 			{!gifUrl && !vidUrl && (
-				<FileUploader
-					fileUploaderProps={{
-						fileUploadFunc: videoUpload,
-						disabled: disablePlayPause,
-					}}
-				/>
+				<>
+					<FileUploader
+						fileUploaderProps={{
+							fileUploadFunc: videoUpload,
+							disabled: disablePlayPause,
+						}}
+					/>
+					{uploadError && (
+						<p className="errorMessage" role="alert">{uploadError}</p>
+					)}
+				</>
 			)}
 
 			{!gifUrl && vidUrl && (
@@ -929,17 +973,14 @@ function App() {
 						<UploadedVideo
 							videoElements={{
 								canvasRef,
-								disablePlayPause,
+								canvasCallbackRef,
 								vidRef,
 								vidUrl,
-								showSettings,
 								showFrame,
-								levels,
 								setShowFrame,
 								videoReady,
 								checkIfOver,
 								paintCanvas,
-								handlePlayPause,
 								textOptions,
 								textPositions,
 								gifTargetWidth,
@@ -1002,23 +1043,21 @@ function App() {
 								))}
 							</div>
 							<div className="extraSettings">
-								{showSettings.includes(`${settings.GIF}`) && (
+								{showSettings === settings.GIF && (
 									<EditOptions
-										editProps={{
-											videoLength,
-											startTime,
-											vidRef,
-											setStartTime,
-											framerate,
-											setFramerate,
-											duration,
-											minimumDuration,
-											maxDuration,
-											setDuration,
-										}}
+										videoLength={videoLength}
+										startTime={startTime}
+										vidRef={vidRef}
+										setStartTime={setStartTime}
+										framerate={framerate}
+										setFramerate={setFramerate}
+										duration={duration}
+										minimumDuration={minimumDuration}
+										maxDuration={maxDuration}
+										setDuration={setDuration}
 									/>
 								)}
-								{showSettings.includes(`${settings.Video}`) && (
+								{showSettings === settings.Video && (
 									<FilterOptions
 										filterProps={{
 											videoMenuOptions,
@@ -1032,18 +1071,16 @@ function App() {
 										}}
 									/>
 								)}
-								{showSettings.includes(`${settings.Text}`) && (
+								{showSettings === settings.Text && (
 									<CaptionOptions
-										captionOptions={{
-											textPositions,
-											textSizes,
-											textFonts,
-											targetContentColourInputs,
-											textOptions,
-											setTextOptions,
-											vidRef,
-											fontSizeRef,
-										}}
+										textPositions={textPositions}
+										textSizes={textSizes}
+										textFonts={textFonts}
+										targetContentColourInputs={targetContentColourInputs}
+										textOptions={textOptions}
+										setTextOptions={setTextOptions}
+										vidRef={vidRef}
+										fontSizeRef={fontSizeRef}
 									/>
 								)}
 							</div>

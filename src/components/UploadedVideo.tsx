@@ -1,6 +1,5 @@
 import React from "react"
-import { settings } from "../interfaces/enums"
-import { FilterLevels, VideoSettings } from "../interfaces/types"
+import { VideoSettings } from "../interfaces/types"
 import CaptionPreview from "./Caption/CaptionPreview"
 import { waitForNextFrame } from "../utils/videoHelpers"
 
@@ -11,14 +10,12 @@ type TextPosition = {
 
 type Props = {
 	canvasRef: React.RefObject<HTMLCanvasElement>
-	disablePlayPause: boolean
+	canvasCallbackRef?: (node: HTMLCanvasElement | null) => void
 	vidRef: React.RefObject<HTMLVideoElement>
 	vidUrl: string
-	showSettings: string
 	showFrame: {
 		stop: () => void
 	} | null
-	levels: FilterLevels
 	setShowFrame: React.Dispatch<
 		React.SetStateAction<{
 			stop: () => void
@@ -27,7 +24,6 @@ type Props = {
 	videoReady: () => void
 	checkIfOver: () => void
 	paintCanvas: (oneIteration?: boolean) => void
-	handlePlayPause: () => void
 	textOptions: VideoSettings
 	textPositions: TextPosition[]
 	gifTargetWidth?: number | null
@@ -42,17 +38,14 @@ type Props = {
 const UploadedVideo = (props: { videoElements: Props }) => {
 	const {
 		canvasRef,
-		disablePlayPause,
+		canvasCallbackRef,
 		vidRef,
 		vidUrl,
-		showSettings,
 		showFrame,
-		levels,
 		setShowFrame,
 		videoReady,
 		checkIfOver,
 		paintCanvas,
-		handlePlayPause,
 		textOptions,
 		textPositions,
 		gifTargetWidth,
@@ -71,13 +64,13 @@ const UploadedVideo = (props: { videoElements: Props }) => {
 				<video
 					ref={vidRef}
 					muted
+					aria-hidden="true"
 					width="auto"
 					height="500px"
 					onLoadedData={videoReady}
 					onTimeUpdate={() => {
 						// Keep canvas in sync with playback
 						checkIfOver()
-						paintCanvas(true)
 					}}
 					onPlay={() => {
 						paintCanvas()
@@ -113,8 +106,9 @@ const UploadedVideo = (props: { videoElements: Props }) => {
 					- caption layout math
 				*/}
 				<canvas
-					title="canvas"
-					ref={canvasRef}
+					title="Video frame preview with applied filters"
+					aria-label="Video frame preview"
+					ref={canvasCallbackRef ?? canvasRef}
 					width={canvasDimensions.width || vidRef.current?.clientWidth || 0}
 					height={canvasDimensions.height || vidRef.current?.clientHeight || 0}
 					className={"canvasVid"}
