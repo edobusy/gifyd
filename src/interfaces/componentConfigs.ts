@@ -64,7 +64,7 @@ export const textFonts = [
   },
 ]
 
-export const targetContentColourInputs = [
+export const targetContentColourInputs: { targetContent: 'text' | 'box'; transparency: boolean }[] = [
   {
     targetContent: 'text',
     transparency: false,

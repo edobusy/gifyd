@@ -8,8 +8,7 @@ type Props = {
 	setGifUrl: React.Dispatch<SetStateAction<string>>
 }
 
-const GifResult = (props: { gifProps: Props }) => {
-	const { gifRef, gifUrl, disablePlayPause, setGifUrl } = props.gifProps
+const GifResult = ({ gifRef, gifUrl, disablePlayPause, setGifUrl }: Props) => {
 
 	const [fileName, setFileName] = useState("")
 
@@ -40,15 +39,11 @@ const GifResult = (props: { gifProps: Props }) => {
 				<div className="dualColGif">
 					<div className="gifButton">
 						<Button
-							buttonProps={{
-								buttonName: "Back",
-								disabled: disablePlayPause,
-								tilt: false,
-								handleClick: (
-									e: React.MouseEvent<HTMLButtonElement, MouseEvent>
-								) => {
-									setGifUrl("")
-								},
+							buttonName="Back"
+							disabled={disablePlayPause}
+							tilt={false}
+							handleClick={() => {
+								setGifUrl("")
 							}}
 						/>
 					</div>
@@ -58,11 +53,9 @@ const GifResult = (props: { gifProps: Props }) => {
 							download={fileName.length > 0 ? fileName : "newGif"}
 						>
 							<Button
-								buttonProps={{
-									buttonName: "Download",
-									disabled: disablePlayPause,
-									tilt: false,
-								}}
+								buttonName="Download"
+								disabled={disablePlayPause}
+								tilt={false}
 							/>
 						</a>
 					</div>

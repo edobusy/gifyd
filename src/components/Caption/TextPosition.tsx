@@ -9,9 +9,7 @@ type Props = {
 }
 
 // positionEquation would be (h-text_h)/20 for top and (h-text_h)-(h-text_h)/20 for bottom
-const TextPosition = (props: { buttonProps: Props }) => {
-  const { positionName, positionEquation, textOptions, setTextOptions } =
-    props.buttonProps
+const TextPosition = ({ positionName, positionEquation, textOptions, setTextOptions }: Props) => {
   return (
     <div className='radioContainer'>
       <input

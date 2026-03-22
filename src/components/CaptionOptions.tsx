@@ -20,7 +20,7 @@ type Props = {
 		fontId: string
 	}[]
 	targetContentColourInputs: {
-		targetContent: string
+		targetContent: 'text' | 'box'
 		transparency: boolean
 	}[]
 	textOptions: VideoSettings
@@ -81,12 +81,10 @@ const CaptionOptions = React.memo((props: Props) => {
 								{textPositions.map(({ positionName, positionEquation }) => (
 									<TextPosition
 										key={"textPosButton" + positionName}
-										buttonProps={{
-											positionName,
-											positionEquation,
-											textOptions,
-											setTextOptions,
-										}}
+										positionName={positionName}
+										positionEquation={positionEquation}
+										textOptions={textOptions}
+										setTextOptions={setTextOptions}
 									/>
 								))}
 							</div>
@@ -99,14 +97,12 @@ const CaptionOptions = React.memo((props: Props) => {
 								{textSizes.map(({ size, divisor }) => (
 									<TextSize
 										key={"sizeInput" + size}
-										inputProps={{
-											size,
-											divisor,
-											textOptions,
-											setTextOptions,
-											vidRef,
-											fontSizeRef,
-										}}
+										size={size}
+										divisor={divisor}
+										textOptions={textOptions}
+										setTextOptions={setTextOptions}
+										vidRef={vidRef}
+										fontSizeRef={fontSizeRef}
 									/>
 								))}
 							</div>
@@ -119,12 +115,10 @@ const CaptionOptions = React.memo((props: Props) => {
 								{textFonts.map(({ fontName, fontId }) => (
 									<TextFont
 										key={"fontChoice" + fontId}
-										fontProps={{
-											fontName,
-											fontId,
-											textOptions,
-											setTextOptions,
-										}}
+										fontName={fontName}
+										fontId={fontId}
+										textOptions={textOptions}
+										setTextOptions={setTextOptions}
 									/>
 								))}
 							</div>
@@ -133,12 +127,10 @@ const CaptionOptions = React.memo((props: Props) => {
 							({ targetContent, transparency }) => (
 								<TextColour
 									key={"textColour" + targetContent}
-									colourProps={{
-										targetContent,
-										transparency,
-										textOptions,
-										setTextOptions,
-									}}
+									targetContent={targetContent}
+									transparency={transparency}
+									textOptions={textOptions}
+									setTextOptions={setTextOptions}
 								/>
 							),
 						)}

@@ -13,17 +13,15 @@ type Props = {
 	setIsFilterFocused: React.Dispatch<React.SetStateAction<boolean[]>>
 }
 
-const FilterButton = (props: { filterButtonProps: Props }) => {
-	const {
-		buttonName,
-		videoMenuVal,
-		callbackFunction,
-		setCallback,
-		setColourSettings,
-		isFilterFocused,
-		setIsFilterFocused,
-	} = props.filterButtonProps
-
+const FilterButton = ({
+	buttonName,
+	videoMenuVal,
+	callbackFunction,
+	setCallback,
+	setColourSettings,
+	isFilterFocused,
+	setIsFilterFocused,
+}: Props) => {
 	const handleClick = () => {
 		setColourSettings((setting) => {
 			if (setting === videoMenuVal) {
@@ -32,26 +30,24 @@ const FilterButton = (props: { filterButtonProps: Props }) => {
 					next[videoMenuVal] = false
 					return next
 				})
+				setCallback(() => null)
 				return null
 			}
 			setIsFilterFocused((arr) => {
 				return arr.map((_, idx) => idx === videoMenuVal)
 			})
+			setCallback(() => callbackFunction)
 			return videoMenuVal
 		})
-
-		setCallback(() => callbackFunction)
 	}
 
 	return (
 		<Button
-			buttonProps={{
-				handleClick,
-				buttonName,
-				tilt: false,
-				disabled: false,
-				isFocused: isFilterFocused[videoMenuVal],
-			}}
+			handleClick={handleClick}
+			buttonName={buttonName}
+			tilt={false}
+			disabled={false}
+			isFocused={isFilterFocused[videoMenuVal]}
 		/>
 	)
 }

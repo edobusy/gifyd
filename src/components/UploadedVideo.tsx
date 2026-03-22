@@ -35,23 +35,22 @@ type Props = {
 // - Hosting the hidden <video> element (source of truth for frames)
 // - Rendering the visible <canvas>
 // - Overlaying CaptionPreview on top of the canvas
-const UploadedVideo = (props: { videoElements: Props }) => {
-	const {
-		canvasRef,
-		canvasCallbackRef,
-		vidRef,
-		vidUrl,
-		showFrame,
-		setShowFrame,
-		videoReady,
-		checkIfOver,
-		paintCanvas,
-		textOptions,
-		textPositions,
-		gifTargetWidth,
-		gifTargetHeight,
-		canvasDimensions,
-	} = props.videoElements
+const UploadedVideo = ({
+	canvasRef,
+	canvasCallbackRef,
+	vidRef,
+	vidUrl,
+	showFrame,
+	setShowFrame,
+	videoReady,
+	checkIfOver,
+	paintCanvas,
+	textOptions,
+	textPositions,
+	gifTargetWidth,
+	gifTargetHeight,
+	canvasDimensions,
+}: Props) => {
 
 	return (
 		<div>

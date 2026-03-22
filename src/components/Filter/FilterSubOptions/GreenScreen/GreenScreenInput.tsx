@@ -7,8 +7,7 @@ type Props = {
   setLevels: React.Dispatch<React.SetStateAction<FilterLevels>>
 }
 
-const GreenScreenInput = (props: { optionProps: Props }) => {
-  const { colour, levels, setLevels } = props.optionProps
+const GreenScreenInput = ({ colour, levels, setLevels }: Props) => {
   return (
     <div className='desktopGreenScreen'>
       <div className='noStretch'>
@@ -28,6 +27,7 @@ const GreenScreenInput = (props: { optionProps: Props }) => {
           </div>
           <input
             type='range'
+            id={colour[0] + 'min'}
             min='0'
             max='255'
             name={colour[0] + 'min'}
@@ -51,6 +51,7 @@ const GreenScreenInput = (props: { optionProps: Props }) => {
           </div>
           <input
             type='range'
+            id={colour[0] + 'max'}
             min='0'
             max='255'
             name={colour[0] + 'max'}

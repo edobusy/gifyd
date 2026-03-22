@@ -14,17 +14,15 @@ type Props = {
 
 // This buttons opens up the settings options related to the button
 // Example: Edit, Filter, Caption
-const MainSettingsButton = (props: { buttonProps: Props }) => {
-	const {
-		showSettings,
-		disablePlayPause,
-		setting,
-		buttonName,
-		setShowSettings,
-		isFocused,
-		setIsFocused,
-	} = props.buttonProps
-
+const MainSettingsButton = ({
+	showSettings,
+	disablePlayPause,
+	setting,
+	buttonName,
+	setShowSettings,
+	isFocused,
+	setIsFocused,
+}: Props) => {
 	const handleClick = () => {
 		if (showSettings === setting) {
 			setIsFocused((arr) => {
@@ -44,14 +42,12 @@ const MainSettingsButton = (props: { buttonProps: Props }) => {
 	return (
 		<div className="mainSettingsButton">
 			<Button
-				buttonProps={{
-					handleClick,
-					disabled: disablePlayPause,
-					value: `${setting}`,
-					buttonName,
-					tilt: true,
-					isFocused: isFocused[setting],
-				}}
+				handleClick={handleClick}
+				disabled={disablePlayPause}
+				value={`${setting}`}
+				buttonName={buttonName}
+				tilt={true}
+				isFocused={isFocused[setting]}
 			/>
 		</div>
 	)

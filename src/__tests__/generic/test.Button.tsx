@@ -20,7 +20,7 @@ describe("Simple tests on the custom Button component", () => {
 	it("Button name is correctly displayed on render", () => {
 		render(
 			<Button
-				buttonProps={{ buttonName: "Done", tilt: false, disabled: false }}
+				buttonName="Done" tilt={false} disabled={false}
 			/>
 		)
 
@@ -41,7 +41,7 @@ describe("Simple tests on the custom Button component", () => {
 				>
 					Change Button Name
 				</button>
-				<Button buttonProps={{ buttonName, tilt: false, disabled: false }} />
+				<Button buttonName={buttonName} tilt={false} disabled={false} />
 			</div>
 		)
 	}

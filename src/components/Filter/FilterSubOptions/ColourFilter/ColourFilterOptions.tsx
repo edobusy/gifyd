@@ -9,8 +9,7 @@ type Props = {
   setRgbaMod: React.Dispatch<React.SetStateAction<Colour>>
 }
 
-const ColourFilterOptions = (props: { optionProps: Props }) => {
-  const { colourNames, rgbaMod, setRgbaMod } = props.optionProps
+const ColourFilterOptions = ({ colourNames, rgbaMod, setRgbaMod }: Props) => {
 
   const handleClick = () => {
     setRgbaMod({ red: 0, blue: 0, green: 0, alpha: 255 })
@@ -22,17 +21,15 @@ const ColourFilterOptions = (props: { optionProps: Props }) => {
         // Give red, green, blue for colour
         <ColourModifierInput
           key={'colourFilter' + colour}
-          colourModifierInputProps={{ colour, rgbaMod, setRgbaMod }}
+          colour={colour} rgbaMod={rgbaMod} setRgbaMod={setRgbaMod}
         />
       ))}
       <div className='centerReset'>
         <Button
-          buttonProps={{
-            handleClick,
-            buttonName: 'Reset',
-            tilt: false,
-            disabled: false,
-          }}
+          handleClick={handleClick}
+          buttonName="Reset"
+          tilt={false}
+          disabled={false}
         />
       </div>
     </div>

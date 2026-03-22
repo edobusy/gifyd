@@ -11,22 +11,21 @@ type Props = {
 	fontSizeRef: React.MutableRefObject<string | null>
 }
 // divisor is 20 for small, 15 for medium, 10 for large
-const TextSize = (props: { inputProps: Props }) => {
-	const { size, divisor, textOptions, setTextOptions, vidRef, fontSizeRef } =
-		props.inputProps
+const TextSize = ({ size, divisor, textOptions, setTextOptions, vidRef, fontSizeRef }: Props) => {
 
 	const [dividend, setDividend] = useState(0)
 
 	useEffect(() => {
-		;(async () => {
+		const computeDividend = async () => {
 			if (!vidRef.current) return
 			const divSize = await takeDown(
 				vidRef.current.videoWidth,
 				vidRef.current.videoHeight
 			)
 			setDividend(divSize[0])
-		})()
-	}, [])
+		}
+		computeDividend()
+	}, [vidRef.current?.videoWidth, vidRef.current?.videoHeight])
 
 	return (
 		<div className="radioContainer">

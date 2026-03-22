@@ -7,7 +7,6 @@ type Props = {
   duration: number
   framerate: number
   setFramerate: (value: React.SetStateAction<number>) => void
-  vidRef: React.RefObject<HTMLVideoElement>
   startTime: number
   setStartTime: (value: React.SetStateAction<number>) => void
   setDuration: (value: React.SetStateAction<number>) => void
@@ -21,7 +20,6 @@ const EditOptions = React.memo((props: Props) => {
     duration,
     framerate,
     setFramerate,
-    vidRef,
     startTime,
     setStartTime,
     setDuration,
@@ -43,9 +41,6 @@ const EditOptions = React.memo((props: Props) => {
             max={`${videoLength}`}
             value={startTime}
             onChange={(e) => {
-              if (vidRef.current) {
-                vidRef.current.currentTime = parseFloat(e.target.value) / 1000
-              }
               setStartTime(parseFloat(e.target.value))
             }}
           />

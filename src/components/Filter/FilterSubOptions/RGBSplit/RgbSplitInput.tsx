@@ -7,8 +7,7 @@ type Props = {
   setRgbShift: React.Dispatch<React.SetStateAction<Colour>>
 }
 
-const RgbSplitInput = (props: { optionProps: Props }) => {
-  const { colour, rgbShift, setRgbShift } = props.optionProps
+const RgbSplitInput = ({ colour, rgbShift, setRgbShift }: Props) => {
 
   return (
     <div className='dualCol'>

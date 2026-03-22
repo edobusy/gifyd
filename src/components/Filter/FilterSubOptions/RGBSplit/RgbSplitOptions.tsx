@@ -9,8 +9,7 @@ type Props = {
   setRgbShift: React.Dispatch<React.SetStateAction<Colour>>
 }
 
-const RgbSplitOptions = (props: { optionProps: Props }) => {
-  const { colourNames, rgbShift, setRgbShift } = props.optionProps
+const RgbSplitOptions = ({ colourNames, rgbShift, setRgbShift }: Props) => {
 
   const handleClick = () => {
     setRgbShift({ red: 0, blue: 0, green: 0 })
@@ -21,17 +20,15 @@ const RgbSplitOptions = (props: { optionProps: Props }) => {
       {colourNames.map((colour) => (
         <RgbSplitInput
           key={'rgbShift' + colour}
-          optionProps={{ colour, rgbShift, setRgbShift }}
+          colour={colour} rgbShift={rgbShift} setRgbShift={setRgbShift}
         />
       ))}
       <div className='centerReset'>
         <Button
-          buttonProps={{
-            handleClick,
-            buttonName: 'Reset',
-            tilt: false,
-            disabled: false,
-          }}
+          handleClick={handleClick}
+          buttonName="Reset"
+          tilt={false}
+          disabled={false}
         />
       </div>
     </div>

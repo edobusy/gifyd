@@ -63,7 +63,7 @@ describe("Simple tests on the custom File Uploader component", () => {
 
 		render(
 			<FileUploader
-				fileUploaderProps={{ fileUploadFunc: videoUploadMock, disabled: false }}
+				fileUploadFunc={videoUploadMock} disabled={false}
 			/>
 		)
 
@@ -84,7 +84,7 @@ describe("Simple tests on the custom File Uploader component", () => {
 
 		render(
 			<FileUploader
-				fileUploaderProps={{ fileUploadFunc: videoUploadMock, disabled: false }}
+				fileUploadFunc={videoUploadMock} disabled={false}
 			/>
 		)
 
@@ -105,7 +105,7 @@ describe("Simple tests on the custom File Uploader component", () => {
 
 		render(
 			<FileUploader
-				fileUploaderProps={{ fileUploadFunc: videoUploadMock, disabled: false }}
+				fileUploadFunc={videoUploadMock} disabled={false}
 			/>
 		)
 
@@ -128,7 +128,7 @@ describe("Simple tests on the custom File Uploader component", () => {
 
 		render(
 			<FileUploader
-				fileUploaderProps={{ fileUploadFunc: videoUploadMock, disabled: false }}
+				fileUploadFunc={videoUploadMock} disabled={false}
 			/>
 		)
 
@@ -150,7 +150,7 @@ describe("Simple tests on the custom File Uploader component", () => {
 
 		render(
 			<FileUploader
-				fileUploaderProps={{ fileUploadFunc: videoUploadMock, disabled: false }}
+				fileUploadFunc={videoUploadMock} disabled={false}
 			/>
 		)
 

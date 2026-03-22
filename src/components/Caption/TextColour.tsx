@@ -1,67 +1,71 @@
 import React, { SetStateAction } from 'react'
 import { VideoSettings } from '../../interfaces/types'
 
+const propertyMap = {
+  text: { colour: 'textColour' as const, transparency: null },
+  box: { colour: 'boxColour' as const, transparency: 'boxTransparency' as const },
+}
+
 type Props = {
-  targetContent: string
+  targetContent: keyof typeof propertyMap
   transparency: boolean
   textOptions: VideoSettings
   setTextOptions: React.Dispatch<SetStateAction<VideoSettings>>
 }
 
-const TextColour = (props: { colourProps: Props }) => {
-  const { targetContent, transparency, textOptions, setTextOptions } =
-    props.colourProps
+const TextColour = ({ targetContent, transparency, textOptions, setTextOptions }: Props) => {
 
-  const property = targetContent + 'Colour'
-  const transparencyProperty = targetContent + 'Transparency'
+  const colourKey = propertyMap[targetContent].colour
+  const transparencyKey = propertyMap[targetContent].transparency
+  const label = targetContent[0].toUpperCase() + targetContent.substring(1)
 
   return (
     <>
       <div className='dualColCaption'>
         <div className='container'>
-          <label htmlFor={property} className='simpleLabel tilt'>
-            {targetContent[0].toUpperCase() + targetContent.substring(1)}{' '}
+          <label htmlFor={colourKey} className='simpleLabel tilt'>
+            {label}{' '}
             Colour:
           </label>
         </div>
         <div className='container'>
           <input
             type='color'
-            id={property}
-            name={property}
-            aria-label={property}
-            value={textOptions[property as keyof VideoSettings]}
+            id={colourKey}
+            name={colourKey}
+            aria-label={colourKey}
+            value={textOptions[colourKey]}
             onChange={(e) => {
               setTextOptions({
                 ...textOptions,
-                [property]: e.target.value,
+                [colourKey]: e.target.value,
               })
             }}
           />
         </div>
       </div>
-      {transparency && (
+      {transparency && transparencyKey && (
         <div className='dualColCaption'>
           <div className='container'>
-            <label htmlFor={transparencyProperty} className='simpleLabel tilt'>
-              {targetContent[0].toUpperCase() + targetContent.substring(1)}{' '}
+            <label htmlFor={transparencyKey} className='simpleLabel tilt'>
+              {label}{' '}
               Alpha:
             </label>
           </div>
           <div className='container'>
             <input
               type='range'
-              id={transparencyProperty}
-              name={transparencyProperty}
-              aria-label={transparencyProperty}
+              id={transparencyKey}
+              name={transparencyKey}
+              aria-label={transparencyKey}
               step='0.1'
               min='0'
               max='1'
-              value={textOptions[transparencyProperty as keyof VideoSettings]}
+              value={textOptions[transparencyKey]}
               onChange={(e) => {
                 setTextOptions({
                   ...textOptions,
-                  [transparencyProperty]: e.target.value,
+                  [transparencyKey]: e.target.value,
                 })
               }}
             />

@@ -15,8 +15,7 @@ type Props = {
   transparency: boolean
 }
 
-const TextColourWrapper = (props: { componentProps: Props }) => {
-  const { transparency } = props.componentProps
+const TextColourWrapper = ({ transparency }: Props) => {
   const [textOptions, setTextOptions] = useState<VideoSettings>({
     content: '',
     textColour: '#ffffff',
@@ -34,12 +33,10 @@ const TextColourWrapper = (props: { componentProps: Props }) => {
       <p>{textOptions.boxColour}</p>
       <p>{textOptions.boxTransparency}</p>
       <TextColour
-        colourProps={{
-          targetContent: 'box',
-          transparency,
-          textOptions,
-          setTextOptions,
-        }}
+        targetContent="box"
+        transparency={transparency}
+        textOptions={textOptions}
+        setTextOptions={setTextOptions}
       />
     </div>
   )
@@ -48,7 +45,7 @@ const TextColourWrapper = (props: { componentProps: Props }) => {
 describe('Simple tests on the TextColour component', () => {
   it('is correctly displayed with the transparency option off', () => {
     // Arrange
-    render(<TextColourWrapper componentProps={{ transparency: false }} />)
+    render(<TextColourWrapper transparency={false} />)
 
     const colourLabel = screen.getByText('Box Colour:')
     const colourSlider = screen.getByLabelText('boxColour')
@@ -66,7 +63,7 @@ describe('Simple tests on the TextColour component', () => {
 
   it('is correctly displayed with the transparency option on', () => {
     // Arrange
-    render(<TextColourWrapper componentProps={{ transparency: true }} />)
+    render(<TextColourWrapper transparency={true} />)
 
     const colourLabel = screen.getByText('Box Colour:')
     const colourSlider = screen.getByLabelText('boxColour')
@@ -89,7 +86,7 @@ describe('Simple tests on the TextColour component', () => {
 
   it('changes the colour value when the colour input is used', () => {
     // Arrange
-    render(<TextColourWrapper componentProps={{ transparency: false }} />)
+    render(<TextColourWrapper transparency={false} />)
 
     const colourSlider = screen.getByLabelText('boxColour')
 
@@ -103,7 +100,7 @@ describe('Simple tests on the TextColour component', () => {
 
   it('changes the transparency value when the alpha slider is used', () => {
     // Arrange
-    render(<TextColourWrapper componentProps={{ transparency: true }} />)
+    render(<TextColourWrapper transparency={true} />)
 
     const transparencySlider = screen.getByLabelText('boxTransparency')
 

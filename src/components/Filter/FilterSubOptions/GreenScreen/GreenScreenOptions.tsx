@@ -9,8 +9,7 @@ type Props = {
   setLevels: React.Dispatch<React.SetStateAction<FilterLevels>>
 }
 
-const GreenScreenOptions = (props: { optionProps: Props }) => {
-  const { colourNames, levels, setLevels } = props.optionProps
+const GreenScreenOptions = ({ colourNames, levels, setLevels }: Props) => {
 
   const handleClick = () => {
     setLevels({
@@ -28,7 +27,7 @@ const GreenScreenOptions = (props: { optionProps: Props }) => {
     <div className='filterSubOptions greenScreenOption'>
       {colourNames.map((colour) => (
         <div key={'greenScreen' + colour}>
-          <GreenScreenInput optionProps={{ colour, levels, setLevels }} />
+          <GreenScreenInput colour={colour} levels={levels} setLevels={setLevels} />
           <br />
         </div>
       ))}
@@ -55,12 +54,10 @@ const GreenScreenOptions = (props: { optionProps: Props }) => {
       </div>
       <div className='centerReset'>
         <Button
-          buttonProps={{
-            handleClick,
-            buttonName: 'Reset',
-            tilt: false,
-            disabled: false,
-          }}
+          handleClick={handleClick}
+          buttonName="Reset"
+          tilt={false}
+          disabled={false}
         />
       </div>
     </div>

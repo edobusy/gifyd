@@ -20,16 +20,14 @@ type Props = {
   setIsFilterFocused: React.Dispatch<React.SetStateAction<boolean[]>>
 }
 
-const FilterOptions = (props: { filterProps: Props }) => {
-  const {
-    videoMenuOptions,
-    setColourSettings,
-    setCallback,
-    colourSettings,
-    isFilterFocused,
-    setIsFilterFocused,
-  } = props.filterProps
-
+const FilterOptions = ({
+  videoMenuOptions,
+  setColourSettings,
+  setCallback,
+  colourSettings,
+  isFilterFocused,
+  setIsFilterFocused,
+}: Props) => {
   return (
     <div className='filterSettings'>
       <div className='filterOptionsContainer'>
@@ -37,15 +35,13 @@ const FilterOptions = (props: { filterProps: Props }) => {
           ({ buttonName, videoMenuVal, callbackFunction }) => (
             <div key={buttonName} className='filterOptions'>
               <FilterButton
-                filterButtonProps={{
-                  buttonName,
-                  videoMenuVal,
-                  callbackFunction,
-                  setCallback,
-                  setColourSettings,
-                  isFilterFocused,
-                  setIsFilterFocused,
-                }}
+                buttonName={buttonName}
+                videoMenuVal={videoMenuVal}
+                callbackFunction={callbackFunction}
+                setCallback={setCallback}
+                setColourSettings={setColourSettings}
+                isFilterFocused={isFilterFocused}
+                setIsFilterFocused={setIsFilterFocused}
               />
             </div>
           )
@@ -56,7 +52,7 @@ const FilterOptions = (props: { filterProps: Props }) => {
           ({ videoMenuVal, CustomisationComponent, optionProps }) => (
             <div key={'customisationComponent' + videoMenuVal}>
               {colourSettings === videoMenuVal && (
-                <CustomisationComponent optionProps={optionProps} />
+                <CustomisationComponent {...optionProps} />
               )}
             </div>
           )

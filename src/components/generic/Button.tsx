@@ -9,9 +9,7 @@ type Props = {
 	isFocused?: boolean
 }
 
-const Button = (props: { buttonProps: Props }) => {
-	const { handleClick, buttonName, tilt, disabled, value, isFocused } =
-		props.buttonProps
+const Button = ({ handleClick, buttonName, tilt, disabled, value, isFocused }: Props) => {
 
 	return (
 		<button

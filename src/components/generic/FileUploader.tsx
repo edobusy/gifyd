@@ -6,9 +6,8 @@ type Props = {
   disabled: boolean
 }
 
-const FileUploader = (props: { fileUploaderProps: Props }) => {
+const FileUploader = ({ fileUploadFunc, disabled }: Props) => {
   const hiddenFileInput = useRef<HTMLInputElement>(null)
-  const { fileUploadFunc, disabled } = props.fileUploaderProps
 
   const handleClick = (e: React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
     if (!hiddenFileInput.current) return
@@ -29,12 +28,10 @@ const FileUploader = (props: { fileUploaderProps: Props }) => {
         disabled={disabled}
       ></input>
       <Button
-        buttonProps={{
-          handleClick,
-          buttonName: 'Upload',
-          tilt: false,
-          disabled,
-        }}
+        handleClick={handleClick}
+        buttonName="Upload"
+        tilt={false}
+        disabled={disabled}
       />
     </div>
   )

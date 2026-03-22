@@ -8,20 +8,19 @@ type Props = {
   setTextOptions: React.Dispatch<SetStateAction<VideoSettings>>
 }
 
-const TextFont = (props: { fontProps: Props }) => {
-  const { fontName, fontId, textOptions, setTextOptions } = props.fontProps
+const TextFont = ({ fontName, fontId, textOptions, setTextOptions }: Props) => {
 
   return (
     <div className='radioContainer'>
       <input
         type='radio'
         id={fontId}
-        name={fontId}
+        name="textFont"
         value={textOptions.font}
         onChange={(e) => {
           setTextOptions({
             ...textOptions,
-            font: e.target.checked ? e.target.name : textOptions.font,
+            font: e.target.checked ? fontId : textOptions.font,
           })
         }}
         checked={textOptions.font === fontId}

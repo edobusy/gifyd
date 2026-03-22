@@ -7,8 +7,7 @@ type Props = {
 	setRgbaMod: React.Dispatch<React.SetStateAction<Colour>>
 }
 
-const ColourModifierInput = (props: { colourModifierInputProps: Props }) => {
-	const { colour, rgbaMod, setRgbaMod } = props.colourModifierInputProps
+const ColourModifierInput = ({ colour, rgbaMod, setRgbaMod }: Props) => {
 
 	return (
 		<div className="dualCol">

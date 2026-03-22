@@ -139,7 +139,7 @@ const CaptionPreview = React.memo(({
 		const ro = new ResizeObserver(() => setTick((t) => t + 1))
 		ro.observe(el)
 		return () => ro.disconnect()
-	}, [canvasRef?.current])
+	}, [canvasRef])
 
 	const rgbBox = hexToRgb(textOptions.boxColour)
 	const rgbText = hexToRgb(textOptions.textColour)
