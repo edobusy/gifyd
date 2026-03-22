@@ -3,7 +3,7 @@ import React from 'react'
 type Props = {
   minimumDuration: number
   maxDuration: number
-  videoLength: number
+  maxStartTime: number
   duration: number
   framerate: number
   setFramerate: (value: React.SetStateAction<number>) => void
@@ -16,7 +16,7 @@ const EditOptions = React.memo((props: Props) => {
   const {
     minimumDuration,
     maxDuration,
-    videoLength,
+    maxStartTime,
     duration,
     framerate,
     setFramerate,
@@ -38,7 +38,7 @@ const EditOptions = React.memo((props: Props) => {
             name='start'
             step='100'
             min='0'
-            max={`${videoLength}`}
+            max={`${maxStartTime}`}
             value={startTime}
             onChange={(e) => {
               setStartTime(parseFloat(e.target.value))

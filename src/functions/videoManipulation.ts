@@ -65,9 +65,11 @@ export const hexToRgb = (hex: string) => {
 }
 
 export const takeDown = (width: number, height: number): number[] => {
-  while (width > 600 || height > 600) {
-    width /= 2
-    height /= 2
+  const maxDim = 600
+  if (width > maxDim || height > maxDim) {
+    const scale = Math.min(maxDim / width, maxDim / height)
+    width = width * scale
+    height = height * scale
   }
   // Ensure dimensions are even (required by H.264 encoder)
   const evenWidth = Math.floor(width / 2) * 2

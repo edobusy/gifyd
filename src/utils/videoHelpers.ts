@@ -93,53 +93,41 @@ export const waitForNextFrame = (): Promise<void> => {
  * @param canvas - A canvas to test drawing on
  * @param timeoutMs - Safety timeout (default 2000ms)
  */
+// Small offscreen canvas reused across calls to avoid per-poll allocation
+const probeCanvas = document.createElement('canvas')
+probeCanvas.width = 10
+probeCanvas.height = 10
+const probeCtx = probeCanvas.getContext('2d', { willReadFrequently: true })
+
 export const waitForVideoFrameReady = (
   video: HTMLVideoElement,
-  canvas?: HTMLCanvasElement,
+  _canvas?: HTMLCanvasElement,
   timeoutMs: number = 2000
 ): Promise<void> => {
   return new Promise((resolve, reject) => {
     const startTime = Date.now()
-    
+
     const checkFrame = () => {
-      // If we have a canvas, test if we can actually draw a non-empty frame
-      if (canvas) {
-        const ctx = canvas.getContext('2d', { willReadFrequently: true })
-        if (ctx && canvas.width > 0 && canvas.height > 0) {
-          // Save current canvas state
-          const savedData = ctx.getImageData(0, 0, canvas.width, canvas.height)
-          
-          // Try to draw the video (small sample for performance)
-          const sampleWidth = Math.min(canvas.width, 10)
-          const sampleHeight = Math.min(canvas.height, 10)
-          ctx.drawImage(video, 0, 0, sampleWidth, sampleHeight)
-          
-          // Check if we got any pixels
-          const imageData = ctx.getImageData(0, 0, sampleWidth, sampleHeight)
-          const hasPixels = imageData.data.some((val, idx) => idx % 4 !== 3 && val !== 0)
-          
-          // Restore canvas to original state (remove our test)
-          ctx.putImageData(savedData, 0, 0)
-          
-          if (hasPixels) {
-            // Frame is drawable!
-            resolve()
-            return
-          }
+      if (probeCtx) {
+        probeCtx.clearRect(0, 0, 10, 10)
+        probeCtx.drawImage(video, 0, 0, 10, 10)
+        const imageData = probeCtx.getImageData(0, 0, 10, 10)
+        const hasPixels = imageData.data.some((val, idx) => idx % 4 !== 3 && val !== 0)
+
+        if (hasPixels) {
+          resolve()
+          return
         }
       }
-      
-      // Check timeout
+
       if (Date.now() - startTime > timeoutMs) {
         reject(new Error('Video frame ready timeout - frame never became drawable'))
         return
       }
-      
-      // Try again next frame
+
       requestAnimationFrame(checkFrame)
     }
-    
-    // Start checking
+
     requestAnimationFrame(checkFrame)
   })
 }

@@ -33,42 +33,48 @@ const clamp = (v: number, a: number, b: number) => Math.max(a, Math.min(b, v))
 
 // Safely evaluates expressions (e.g. "w / 2 - text_w / 2")
 // Variables are substituted from the provided env object
+const MAX_EXPR_DEPTH = 32
+
 function evalExpr(expr: string, env: Record<string, number>): number {
 	const tokens = expr.match(/(\d+\.?\d*|[a-z_]\w*|[+\-*/()])/gi)
 	if (!tokens) return NaN
 	let pos = 0
 
-	function parseExpr(tokens: RegExpMatchArray): number {
-		let left = parseTerm(tokens)
+	function parseExpr(tokens: RegExpMatchArray, depth: number): number {
+		if (depth > MAX_EXPR_DEPTH) return NaN
+		let left = parseTerm(tokens, depth)
 		while (
 			pos < tokens.length &&
 			(tokens[pos] === "+" || tokens[pos] === "-")
 		) {
 			const op = tokens[pos++]
-			const right = parseTerm(tokens)
+			const right = parseTerm(tokens, depth)
 			left = op === "+" ? left + right : left - right
 		}
 		return left
 	}
 
-	function parseTerm(tokens: RegExpMatchArray): number {
-		let left = parseFactor(tokens)
+	function parseTerm(tokens: RegExpMatchArray, depth: number): number {
+		if (depth > MAX_EXPR_DEPTH) return NaN
+		let left = parseFactor(tokens, depth)
 		while (
 			pos < tokens.length &&
 			(tokens[pos] === "*" || tokens[pos] === "/")
 		) {
 			const op = tokens[pos++]
-			const right = parseFactor(tokens)
+			const right = parseFactor(tokens, depth)
 			left = op === "*" ? left * right : left / right
 		}
 		return left
 	}
 
-	function parseFactor(tokens: RegExpMatchArray): number {
+	function parseFactor(tokens: RegExpMatchArray, depth: number): number {
+		if (depth > MAX_EXPR_DEPTH) return NaN
+		if (pos >= tokens.length) return NaN
 		if (tokens[pos] === "(") {
 			pos++
-			const val = parseExpr(tokens)
-			pos++ // skip ')'
+			const val = parseExpr(tokens, depth + 1)
+			if (pos < tokens.length && tokens[pos] === ")") pos++
 			return val
 		}
 		const token = tokens[pos++]
@@ -77,7 +83,7 @@ function evalExpr(expr: string, env: Record<string, number>): number {
 		return Number.isFinite(num) ? num : NaN
 	}
 
-	return parseExpr(tokens)
+	return parseExpr(tokens, 0)
 }
 
 const measureCanvas = document.createElement("canvas")
