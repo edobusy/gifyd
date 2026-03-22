@@ -1,30 +1,107 @@
 # GIFYD
-Web application to create gifs from video files. Customisation options include gif duration, gif framerate, filters, and the possibility to write a caption. Written in TypeScript, HTML, and CSS. File format transformation and video editing was done using ffmpeg, more specifically [ffmpeg.wasm](https://github.com/ffmpegwasm/ffmpeg.wasm).
+
+**Turn any video into a GIF, right in your browser.**
+
+GIFYD is a client-side web app that lets you trim, filter, caption, and export GIFs from video files. All processing happens locally using WebAssembly: no uploads, no server, no waiting.
+
+[**Try the live demo**](https://gifyd.vercel.app)
+
+![Example GIF created with GIFYD](https://media4.giphy.com/media/WpGTp9M9LQFAYR8VQe/giphy.gif)
+
+## Features
+
+- **Trim.** Pick a start time and duration (up to 4 seconds) for your GIF.
+- **Framerate control.** Adjust the output framerate for size vs. smoothness.
+- **Pixel filters.** Colour modification, RGB channel splitting, and green screen replacement.
+- **Captions.** Add text with configurable font, size, colour, background, and position.
+- **Instant preview.** See filters and captions applied in real time on a canvas overlay.
+- **Download.** Name your file and download the finished GIF in one click.
+
+## Tech Stack
+
+![React](https://img.shields.io/badge/React-18-61DAFB?logo=react&logoColor=white)
+![TypeScript](https://img.shields.io/badge/TypeScript-4.6-3178C6?logo=typescript&logoColor=white)
+![Vite](https://img.shields.io/badge/Vite-3-646CFF?logo=vite&logoColor=white)
+![ffmpeg.wasm](https://img.shields.io/badge/ffmpeg.wasm-0.11-007808?logo=ffmpeg&logoColor=white)
+
+| Layer            | Technology                                                                         |
+| ---------------- | ---------------------------------------------------------------------------------- |
+| UI               | React 18, CSS (neubrutalism design)                                                |
+| Language         | TypeScript                                                                         |
+| Video processing | [ffmpeg.wasm](https://github.com/ffmpegwasm/ffmpeg.wasm) (client-side WebAssembly) |
+| Frame rendering  | Canvas API with `requestVideoFrameCallback`                                        |
+| Build            | Vite                                                                               |
+| Testing          | Jest, React Testing Library                                                        |
+| Containerisation | Docker, Docker Compose                                                             |
+
+## How It Works
+
+GIFYD runs FFmpeg entirely in the browser via WebAssembly. When you hit "GIF it!", the app:
+
+1. Seeks the video to your chosen start time
+2. Records canvas frames (with filters and captions baked in) using `MediaRecorder`
+3. Passes the recorded WebM to ffmpeg.wasm for transcoding to GIF
+4. Serves the result as a downloadable blob. Nothing ever leaves your machine.
+
+## Getting Started
+
+### Prerequisites
+
+- [Node.js](https://nodejs.org/) 18+
+- npm
+
+### Run locally
+
+```bash
+git clone https://github.com/edobusy/gifyd.git
+cd gifyd
+npm install
+npm run dev
+```
+
+The app will be available at `http://localhost:5173`.
+
+### Run with Docker
+
+```bash
+docker compose up
+```
+
+### Build for production
+
+```bash
+npm run build
+npm run preview
+```
+
+### Run tests
+
+```bash
+npm test
+```
 
 ## App Walkthrough
-After booting up the application, you will reach the initial view, in which you can see the upload button. Click on it and select the video file you want to extract your GIF from.
 
-![](https://yourimageshare.com/ib/H6a6cJN2yu.webp)
+Upload a video to get started.
 
-You will now be able to see your video on the left, and some video editing options on the right. By clicking the Edit option, you can change the starting point for your GIF, the framerate, and the GIF length.
+![GIFYD upload view](https://yourimageshare.com/ib/H6a6cJN2yu.webp)
 
-![](https://yourimageshare.com/ib/IYgbbROn7F.webp)
+**Edit:** Set the starting point, framerate, and GIF duration.
 
-The Filter button will open up new options to change your video visually, with a series of pixel manipulation filters.
+![GIFYD edit options](https://yourimageshare.com/ib/IYgbbROn7F.webp)
 
-![](https://yourimageshare.com/ib/MLhyYhygef.webp)
+**Filter:** Apply pixel-level visual effects to your video.
 
-You can also add text to your GIF via the Caption button, there are plenty of configuration options for you to customise your caption, so feel free to play around with it. The app will show you what the caption will look like in real time.
+![GIFYD filter options](https://yourimageshare.com/ib/MLhyYhygef.webp)
 
-![](https://yourimageshare.com/ib/yj0fryxMeB.webp)
+**Caption:** Add and customise text with a live preview.
 
-Once you are happy with your creation, press the "GIF it!" button to tell the app that you are done, and the GIF will be created for you. The new view will let you name the GIF file however you want, and by clicking the Download button, you will receive you newly made GIF!
+![GIFYD caption options](https://yourimageshare.com/ib/yj0fryxMeB.webp)
 
-![](https://yourimageshare.com/ib/My95CBs2nj.webp)
+**Export:** Hit "GIF it!", name your file, and download.
 
-And here is the final result!
+![GIFYD export and download](https://yourimageshare.com/ib/My95CBs2nj.webp)
 
-![](https://media4.giphy.com/media/WpGTp9M9LQFAYR8VQe/giphy.gif)
+## License
 
-## Deploy locally
-Download the repository, open the command prompt, navigate to the repository folder, then run `npm install` and `npm run dev` to try out the project yourself!
+[MIT](LICENSE)
