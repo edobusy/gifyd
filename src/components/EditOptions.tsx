@@ -12,7 +12,7 @@ type Props = {
   setDuration: (value: React.SetStateAction<number>) => void
 }
 
-const EditOptions = React.memo((props: Props) => {
+const EditOptions = React.memo(function EditOptions(props: Props) {
   const {
     minimumDuration,
     maxDuration,

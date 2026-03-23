@@ -103,14 +103,14 @@ function measureText(text: string, fontSizePx: number, fontFamily: string) {
 	return { width, height, ascent, descent }
 }
 
-const CaptionPreview = React.memo(({
+const CaptionPreview = React.memo(function CaptionPreview({
 	textOptions,
 	vidRef,
 	canvasRef,
 	textPositions,
 	targetWidth,
 	targetHeight,
-}: Props) => {
+}: Props) {
 	// Normalised caption content
 	const content = String(textOptions.content ?? "").trim()
 

@@ -30,7 +30,7 @@ export async function readFFmpegFile(
 		verbose = true,
 	} = options
 
-	let lastError: any = null
+	let lastError: unknown = null
 
 	for (let attempt = 0; attempt < maxRetries; attempt++) {
 		try {
@@ -135,7 +135,7 @@ export function ffmpegFileExists(ffmpeg: FFmpeg, filename: string): boolean {
 			? filename.substring(filename.lastIndexOf("/") + 1)
 			: filename
 		return files.includes(fileBasename)
-	} catch (error) {
+	} catch {
 		return false
 	}
 }

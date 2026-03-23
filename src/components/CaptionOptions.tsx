@@ -1,5 +1,4 @@
 import React, { SetStateAction } from "react"
-import { hexToRgb } from "../functions/videoManipulation"
 import { VideoSettings } from "../interfaces/types"
 import TextColour from "./Caption/TextColour"
 import TextFont from "./Caption/TextFont"
@@ -33,7 +32,7 @@ type Props = {
 // textSize should be small, medium, large AND 20, 15, 10
 // textFonts should be Times New Roman, Impact, Comic Sans AND times, impact, cursive
 // targetContentColourInputs should be text, box, false, true
-const CaptionOptions = React.memo((props: Props) => {
+const CaptionOptions = React.memo(function CaptionOptions(props: Props) {
 	const {
 		textPositions,
 		textSizes,

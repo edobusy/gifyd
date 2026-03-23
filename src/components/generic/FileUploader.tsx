@@ -9,7 +9,7 @@ type Props = {
 const FileUploader = ({ fileUploadFunc, disabled }: Props) => {
   const hiddenFileInput = useRef<HTMLInputElement>(null)
 
-  const handleClick = (e: React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
+  const handleClick = () => {
     if (!hiddenFileInput.current) return
     hiddenFileInput.current.click()
   }

@@ -17,3 +17,9 @@ dist
 
 # Local environment files
 .env
+
+# Claude files
+.claude/*
+
+# Personal notes
+plan/*

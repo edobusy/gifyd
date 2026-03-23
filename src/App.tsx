@@ -105,14 +105,13 @@ function App() {
 		isPlaybackActive: canvas.isPlaybackActive,
 		startTime,
 		framerate,
-		duration,
 		textOptions,
 		startDrawingFrames: canvas.startDrawingFrames,
 		drawFrame: canvas.drawFrame,
 		paintCanvasAtCurrentTime: canvas.paintCanvasAtCurrentTime,
 	})
 
-	const { gifUrl, setGifUrl, gifStatus, disablePlayPause, setDisablePlayPause, gifRef, makeGif } = gif
+	const { gifUrl, setGifUrl, gifStatus, disablePlayPause, gifRef, makeGif } = gif
 	const { isPlaybackActive } = canvas
 
 	// --- Effects ---

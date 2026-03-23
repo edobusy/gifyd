@@ -22,7 +22,6 @@ type GifCreationDeps = {
 	isPlaybackActive: React.MutableRefObject<boolean>
 	startTime: number
 	framerate: number
-	duration: number
 	textOptions: VideoSettings
 	startDrawingFrames: (
 		ctx: CanvasRenderingContext2D | null,
@@ -39,7 +38,7 @@ export function useGifCreation(deps: GifCreationDeps) {
 	const {
 		ffmpeg, isLoaded, vidRef, canvasRef, ctx,
 		showFrame, setShowFrame, mediaRecorder, isPlaybackActive,
-		startTime, framerate, duration, textOptions,
+		startTime, framerate, textOptions,
 		startDrawingFrames, drawFrame, paintCanvasAtCurrentTime,
 	} = deps
 

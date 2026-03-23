@@ -1,12 +1,8 @@
 import React, { useState } from "react"
-import ReactDOM from "react-dom"
 import {
 	render,
 	screen,
-	fireEvent,
 	cleanup,
-	getNodeText,
-	waitFor,
 } from "@testing-library/react"
 import Button from "../../components/generic/Button"
 import userEvent from "@testing-library/user-event"
@@ -27,9 +23,7 @@ describe("Simple tests on the custom Button component", () => {
 		expect(screen.getByText("Done")).toBeInTheDocument()
 	})
 
-	type Props = {}
-
-	const TestWrapper = (props: Props) => {
+	const TestWrapper = () => {
 		const [buttonName, setButtonName] = useState("Done")
 
 		return (
@@ -47,7 +41,7 @@ describe("Simple tests on the custom Button component", () => {
 	}
 
 	it("Button name is correctly updated when props change", async () => {
-		const { container, getByText, getByRole } = render(<TestWrapper />)
+		const { getByText, getByRole } = render(<TestWrapper />)
 		const changeNameButton = getByText("Change Button Name")
 		const buttonGeneric = getByRole("button", { name: "Done" })
 
