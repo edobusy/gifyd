@@ -1,5 +1,9 @@
 # GIFYD
 
+![CI Pipeline](https://github.com/edobusy/gifyd/actions/workflows/ci-pipeline.yml/badge.svg)
+![CodeQL](https://github.com/edobusy/gifyd/actions/workflows/codeql.yml/badge.svg)
+![Dependency Audit](https://github.com/edobusy/gifyd/actions/workflows/dependency-audit.yml/badge.svg)
+
 **Turn any video into a GIF, right in your browser.**
 
 GIFYD is a client-side web app that lets you trim, filter, caption, and export GIFs from video files. All processing happens locally using WebAssembly: no uploads, no server, no waiting.
