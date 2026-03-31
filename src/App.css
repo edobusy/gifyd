@@ -233,134 +233,6 @@
 	grid-template-columns: 1fr 1fr;
 }
 
-@media screen and (max-width: 912px) {
-	.mainGrid {
-		bottom: 0;
-		left: 0;
-		overflow-y: auto;
-		overflow-x: hidden;
-		position: absolute;
-		right: 0;
-		top: -5vh;
-		display: block;
-	}
-	.rightSide {
-		margin: auto;
-		min-width: 100% !important;
-		height: auto !important;
-		/* margin-top: 40rem; */
-	}
-	.leftSide {
-		margin: 17vh auto 10vh auto;
-		width: 100% !important;
-	}
-
-	.editOptions {
-		margin-top: 0 !important;
-		display: flex;
-		flex-direction: column;
-		align-items: center;
-		justify-content: center;
-		width: 90%;
-		height: 25vh;
-		overflow-y: scroll;
-		overflow-x: hidden;
-		position: relative;
-	}
-
-	.editSubOptionsContainer {
-		position: absolute;
-		width: 100%;
-		top: 2vh;
-	}
-
-	.editSubOptions {
-		display: flex;
-		justify-content: space-around;
-		box-sizing: border-box;
-		height: fit-content;
-		width: 100%;
-		padding: 1.3rem 0;
-	}
-
-	.filterSettings {
-		margin-top: 0 !important;
-		display: flex;
-		flex-direction: column;
-		/* align-items: center; */
-		justify-content: center;
-		width: 90%;
-		height: 40vh;
-		overflow-y: scroll;
-		overflow-x: hidden;
-		position: relative;
-	}
-
-	.filterOptionsContainer {
-		position: absolute !important;
-		width: 100% !important;
-		top: 0 !important;
-	}
-
-	.firstFilterOption {
-		margin-top: 10rem !important;
-		width: 100%;
-		margin-bottom: 2rem !important;
-	}
-
-	.secondFilterOption {
-		margin-top: 10rem !important;
-		width: 100%;
-		margin-bottom: 2rem !important;
-	}
-
-	.greenScreenOption {
-		margin-top: 50rem !important;
-		width: 100%;
-		margin-bottom: 3rem !important;
-	}
-
-	.filterSubOptions {
-		display: flex !important;
-		justify-content: center;
-		align-items: center;
-		flex-direction: column;
-		margin-top: 5rem;
-	}
-
-	.dualCol {
-		justify-content: space-between !important;
-		align-items: center;
-	}
-
-	.dualColGreenScreen {
-		display: flex;
-		flex-direction: column;
-		justify-content: space-around;
-		width: 90%;
-		margin: 1rem;
-	}
-
-	.dualColMinMax {
-		justify-content: space-between !important;
-		align-items: center;
-	}
-}
-
-@media (pointer: coarse) {
-	.buttonContainer:hover {
-		height: 5rem;
-		min-width: 12rem;
-		box-shadow: 1rem 1rem 0px var(--shadow-colour);
-	}
-
-	.buttonContainer:hover .buttonText {
-		margin-top: 0;
-		font-size: var(--font-size-s);
-		width: 12rem;
-	}
-}
-
 .leftSide {
 	position: relative;
 	display: flex;
@@ -501,22 +373,17 @@
 }
 
 .filterSubOptions {
-	display: block !important;
-	justify-content: center;
-	align-items: center;
-	flex-direction: column;
+	display: block;
 }
 
 .filterSubOptions button {
 	margin-top: 2rem;
 }
 
-@media screen and (min-width: 913px) {
-	.filterSettings {
-		width: 90%;
-		height: 7vh;
-		margin: auto;
-	}
+.filterSettings {
+	width: 90%;
+	height: 7vh;
+	margin: auto;
 }
 
 .dualCol {
@@ -593,11 +460,10 @@
 }
 
 .greened {
-	background-color: var(--steel-blue) !important;
+	background-color: var(--steel-blue);
 }
 
 .captionSettings {
-	margin-top: 0 !important;
 	display: flex;
 	flex-direction: column;
 	justify-content: center;
@@ -609,14 +475,14 @@
 }
 
 .captionOptionsContainer {
-	position: absolute !important;
-	width: 100% !important;
-	top: 0 !important;
+	position: absolute;
+	width: 100%;
+	top: 0;
 }
 
 .captionOption {
 	width: 100%;
-	margin-bottom: 2rem !important;
+	margin-bottom: 2rem;
 }
 
 .modalBackground {
@@ -667,4 +533,139 @@
 	font-size: var(--font-size-s);
 	text-align: center;
 	padding: 1rem 2rem;
+}
+
+/* ── Responsive: mobile ─────────────────────────────── */
+
+@media screen and (max-width: 912px) {
+	.mainGrid {
+		bottom: 0;
+		left: 0;
+		overflow-y: auto;
+		overflow-x: hidden;
+		position: absolute;
+		right: 0;
+		top: -5vh;
+		display: block;
+	}
+
+	.rightSide {
+		margin: auto;
+		min-width: 100%;
+		height: auto;
+	}
+
+	.leftSide {
+		margin: 17vh auto 10vh auto;
+		width: 100%;
+	}
+
+	.editOptions {
+		margin-top: 0;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		justify-content: center;
+		width: 90%;
+		height: 25vh;
+		overflow-y: scroll;
+		overflow-x: hidden;
+		position: relative;
+	}
+
+	.editSubOptionsContainer {
+		position: sticky;
+		top: 0;
+		width: 100%;
+		z-index: 1;
+		background-color: var(--pink-chalk);
+	}
+
+	.editSubOptions {
+		display: flex;
+		justify-content: space-around;
+		box-sizing: border-box;
+		height: fit-content;
+		width: 100%;
+		padding: 1.3rem 0;
+	}
+
+	.filterSettings {
+		margin-top: 0;
+		display: flex;
+		flex-direction: column;
+		justify-content: center;
+		width: 90%;
+		height: 40vh;
+		overflow-y: scroll;
+		overflow-x: hidden;
+		position: relative;
+	}
+
+	.filterOptionsContainer {
+		position: sticky;
+		top: 0;
+		width: 100%;
+		z-index: 1;
+		background-color: var(--pink-chalk);
+	}
+
+	.firstFilterOption {
+		margin-top: 2rem;
+		width: 100%;
+		margin-bottom: 2rem;
+	}
+
+	.secondFilterOption {
+		margin-top: 2rem;
+		width: 100%;
+		margin-bottom: 2rem;
+	}
+
+	.greenScreenOption {
+		margin-top: 2rem;
+		width: 100%;
+		margin-bottom: 3rem;
+	}
+
+	.filterSubOptions {
+		display: flex;
+		justify-content: center;
+		align-items: center;
+		flex-direction: column;
+	}
+
+	.dualCol {
+		justify-content: space-between;
+		align-items: center;
+	}
+
+	.dualColGreenScreen {
+		display: flex;
+		flex-direction: column;
+		justify-content: space-around;
+		width: 90%;
+		margin: 1rem;
+	}
+
+	.dualColMinMax {
+		justify-content: space-between;
+		align-items: center;
+	}
+}
+
+/* ── Responsive: touch devices ──────────────────────── */
+
+@media (pointer: coarse) {
+	.buttonContainer:hover {
+		height: 5rem;
+		min-width: 12rem;
+		box-shadow: 1rem 1rem 0px var(--shadow-colour);
+	}
+
+	.buttonContainer:hover .buttonText {
+		margin-top: 0;
+		font-size: var(--font-size-s);
+		width: 12rem;
+	}
 }
