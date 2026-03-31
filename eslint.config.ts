@@ -4,7 +4,7 @@ import tseslint from "typescript-eslint";
 import pluginReact from "eslint-plugin-react";
 
 export default [
-  { ignores: ["dist/", "__mocks__/", "*.cjs"] },
+  { ignores: ["dist/", "__mocks__/", "coverage/", "*.cjs"] },
   { files: ["**/*.{ts,tsx}"] },
   { languageOptions: { globals: globals.browser } },
   js.configs.recommended,

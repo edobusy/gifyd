@@ -9,6 +9,7 @@ import {
 	pauseVideo,
 } from "../utils/videoHelpers"
 import { readFFmpegFile } from "../utils/ffmpegHelpers"
+import { escapeForFFmpeg } from "../utils/captionHelpers"
 
 type GifCreationDeps = {
 	ffmpeg: FFmpeg
@@ -98,15 +99,6 @@ export function useGifCreation(deps: GifCreationDeps) {
 		const resolvedVid = await result.blob.arrayBuffer()
 		URL.revokeObjectURL(result.url)
 		await transcode(new Uint8Array(resolvedVid))
-	}
-
-	const escapeForFFmpeg = (text: string): string => {
-		return text
-			.replace(/\\/g, "\\\\")
-			.replace(/'/g, "\\'")
-			.replace(/:/g, "\\:")
-			.replace(/%/g, "%%")
-			.replace(/;/g, "\\;")
 	}
 
 	const makeGif = async () => {
