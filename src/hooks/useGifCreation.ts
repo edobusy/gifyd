@@ -161,7 +161,7 @@ export function useGifCreation(deps: GifCreationDeps) {
 			setGifStatus("Creating GIF...")
 			const output = await readFFmpegFile(ffmpeg, "out.gif")
 			const newGifUrl = URL.createObjectURL(
-				new Blob([output.buffer], { type: "image/gif" }),
+				new Blob([output], { type: "image/gif" }),
 			)
 			setGifUrl(newGifUrl)
 			setGifStatus("GIF created successfully")
