@@ -11,7 +11,10 @@
 		"build": "tsc && vite build",
 		"preview": "vite preview",
 		"test": "jest",
-		"prepare": "husky"
+		"prepare": "husky",
+		"lint": "eslint .",
+		"lint:fix": "eslint . --fix",
+		"typecheck": "tsc --noEmit"
 	},
 	"dependencies": {
 		"@ffmpeg/core": "^0.11.0",
